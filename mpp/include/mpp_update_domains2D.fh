@@ -21,7 +21,7 @@
     !> Updates data domain of 2D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_2D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-      MPP_TYPE_,        intent(inout)        :: field(:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -30,9 +30,10 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
-      pointer( ptr, field3D )
-      ptr = LOC(field)
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+
+      field3D(1:size(field,1),1:size(field,2),1:1) => field(:,:)
+
       call mpp_update_domains( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count )
       return
@@ -41,7 +42,9 @@
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_3D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:)
+      use, intrinsic :: iso_c_binding, only: c_loc
+      use mpp_mod, only: get_pointer_address
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -122,7 +125,7 @@
          write( text,'(i2)' ) MAX_DOMAIN_FIELDS
          call mpp_error(FATAL,'MPP_UPDATE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
       endif
-      f_addrs(list, tile) = LOC(field)
+      f_addrs(list, tile) = get_pointer_address(c_loc(field))
       update_position = CENTER
       if(present(position)) update_position = position
       if(list == 1 .AND. tile == 1 )then
@@ -178,7 +181,7 @@
     !> Updates data domain of 4D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_4D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
+      MPP_TYPE_, target, contiguous,intent(inout) :: field(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -187,9 +190,9 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
-      pointer( ptr, field3D )
-      ptr = LOC(field)
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+
+      field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)) => field(:,:,:,:)
       call mpp_update_domains( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -198,7 +201,7 @@
     !> Updates data domain of 5D field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_5D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -207,10 +210,9 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
+      MPP_TYPE_, pointer :: field3D(:,:,:)
 
-      pointer( ptr, field3D )
-      ptr = LOC(field)
+      field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)*size(field,5)) => field(:,:,:,:,:)
       call mpp_update_domains( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count )
       return
@@ -219,22 +221,22 @@
     subroutine MPP_REDISTRIBUTE_2D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
                                    &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
-      MPP_TYPE_, intent(in)  :: field_in (:,:)
-      MPP_TYPE_, intent(out) :: field_out(:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: field_in (:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: field_out(:,:)
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),1)
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1)
+      MPP_TYPE_, pointer :: field3D_in (:,:,:)
+      MPP_TYPE_, pointer :: field3D_out(:,:,:)
       type(DomainCommunicator2D),pointer,optional :: dc_handle
-      pointer( ptr_in,  field3D_in  )
-      pointer( ptr_out, field3D_out )
 
       field_out = 0
-      ptr_in = 0
-      ptr_out = 0
-      if(domain_in%initialized) ptr_in  = LOC(field_in )
-      if(domain_out%initialized) ptr_out = LOC(field_out)
+      field3D_in  => null()
+      field3D_out => null()
+      if(domain_in%initialized) &
+        field3D_in (1:size(field_in, 1),1:size(field_in, 2),1:1) => field_in (:,:)
+      if(domain_out%initialized) &
+        field3D_out(1:size(field_out,1),1:size(field_out,2),1:1) => field_out(:,:)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
                            &  dc_handle, position )
 
@@ -244,9 +246,11 @@
 
     subroutine MPP_REDISTRIBUTE_3D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
                                    &  dc_handle, position )
+      use, intrinsic :: iso_c_binding, only: c_loc
+      use mpp_mod, only: get_pointer_address
       type(domain2D), intent(in) :: domain_in, domain_out
-      MPP_TYPE_, intent(in)  :: field_in (:,:,:)
-      MPP_TYPE_, intent(out) :: field_out(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: field_in (:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: field_out(:,:,:)
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
@@ -265,8 +269,8 @@
 
       floc_in = 0
       floc_out = 0
-      if(domain_in%initialized) floc_in = LOC(field_in)
-      if(domain_out%initialized) floc_out = LOC(field_out)
+      if(domain_in%initialized) floc_in = get_pointer_address(c_loc(field_in))
+      if(domain_out%initialized) floc_out = get_pointer_address(c_loc(field_out))
 
       if(present(position)) then
          if(position .NE. CENTER) call mpp_error( FATAL,  &
@@ -341,22 +345,22 @@
     subroutine MPP_REDISTRIBUTE_4D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
                                    &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
-      MPP_TYPE_, intent(in)  :: field_in (:,:,:,:)
-      MPP_TYPE_, intent(out) :: field_out(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: field_in (:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: field_out(:,:,:,:)
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),size(field_in ,3)*size(field_in ,4))
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4))
+      MPP_TYPE_, pointer :: field3D_in (:,:,:)
+      MPP_TYPE_, pointer :: field3D_out(:,:,:)
       type(DomainCommunicator2D),pointer,optional :: dc_handle
-      pointer( ptr_in,  field3D_in  )
-      pointer( ptr_out, field3D_out )
 
       field_out = 0
-      ptr_in = 0
-      ptr_out = 0
-      if(domain_in%initialized) ptr_in  = LOC(field_in )
-      if(domain_out%initialized) ptr_out = LOC(field_out)
+      field3D_in => null()
+      field3D_out => null()
+      if(domain_in%initialized) &
+        field3D_in (1:size(field_in, 1),1:size(field_in, 2),1:size(field_in ,3)*size(field_in ,4)) => field_in (:,:,:,:)
+      if(domain_out%initialized) &
+        field3D_out(1:size(field_out,1),1:size(field_out,2),1:size(field_out,3)*size(field_out,4)) => field_out(:,:,:,:)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
                            &  dc_handle, position  )
 
@@ -366,25 +370,24 @@
     subroutine MPP_REDISTRIBUTE_5D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
                                    &  dc_handle, position )
       type(domain2D), intent(in) :: domain_in, domain_out
-      MPP_TYPE_, intent(in)  :: field_in (:,:,:,:,:)
-      MPP_TYPE_, intent(out) :: field_out(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: field_in (:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: field_out(:,:,:,:,:)
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2), &
-                             & size(field_in ,3)*size(field_in,4)*size(field_in ,5))
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2), &
-                             & size(field_out,3)*size(field_out,4)*size(field_out,5))
-
+      MPP_TYPE_, pointer :: field3D_in (:,:,:)
+      MPP_TYPE_, pointer :: field3D_out(:,:,:)
       type(DomainCommunicator2D),pointer,optional :: dc_handle
-      pointer( ptr_in,  field3D_in  )
-      pointer( ptr_out, field3D_out )
 
       field_out = 0
-      ptr_in = 0
-      ptr_out = 0
-      if(domain_in%initialized) ptr_in  = LOC(field_in )
-      if(domain_out%initialized) ptr_out = LOC(field_out)
+      field3D_in => null()
+      field3D_out => null()
+      if(domain_in%initialized) &
+        field3D_in (1:size(field_in, 1),1:size(field_in, 2),1:size(field_in ,3)*size(field_in ,4)*size(field_in ,5)) => &
+                                                                                                     field_in (:,:,:,:,:)
+      if(domain_out%initialized) &
+        field3D_out(1:size(field_out,1),1:size(field_out,2),1:size(field_out,3)*size(field_out,4)*size(field_out,5)) => &
+                                                                                                     field_out(:,:,:,:,:)
       call mpp_redistribute( domain_in, field3D_in, domain_out, field3D_out, complete, free, list_size, &
                            &  dc_handle, position  )
 
@@ -398,20 +401,19 @@
     subroutine MPP_UPDATE_DOMAINS_2D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 2D field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:), fieldy(:,:)
-      type(domain2D),   intent(inout)        :: domain
-      integer,          intent(in), optional :: flags, gridtype
-      logical,          intent(in), optional :: complete
-      integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
-      character(len=*), intent(in), optional :: name
-      integer,          intent(in), optional :: tile_count
+      MPP_TYPE_, target, contiguous, intent(inout)        :: fieldx(:,:), fieldy(:,:)
+      type(domain2D),                intent(inout)        :: domain
+      integer,                       intent(in), optional :: flags, gridtype
+      logical,                       intent(in), optional :: complete
+      integer,                       intent(in), optional :: whalo, ehalo, shalo, nhalo
+      character(len=*),              intent(in), optional :: name
+      integer,                       intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),1)
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),1)
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
+
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:1) => fieldx(:,:)
+      field3Dy(1:size(fieldy,1),1:size(fieldy,2),1:1) => fieldy(:,:)
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -421,7 +423,9 @@
     subroutine MPP_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 3D field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:), fieldy(:,:,:)
+      use, intrinsic :: iso_c_binding, only: c_loc
+      use mpp_mod, only: get_pointer_address
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:), fieldy(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -514,8 +518,8 @@
          call mpp_error(FATAL,'MPP_UPDATE_3D_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
       endif
 
-      f_addrsx(list, tile) = LOC(fieldx)
-      f_addrsy(list, tile) = LOC(fieldy)
+      f_addrsx(list, tile) = get_pointer_address(c_loc(fieldx))
+      f_addrsy(list, tile) = get_pointer_address(c_loc(fieldy))
 
       if(list == 1 .AND. tile == 1)then
          isize(1)=size(fieldx,1); jsize(1)=size(fieldx,2); ke = size(fieldx,3)
@@ -595,7 +599,7 @@
     subroutine MPP_UPDATE_DOMAINS_4D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 4D field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:), fieldy(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:,:), fieldy(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -603,13 +607,12 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4))
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4))
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
 
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:size(fieldx,3)*size(fieldx,4)) => fieldx(:,:,:,:)
+      field3Dy(1:size(fieldy,1),1:size(fieldy,2),1:size(fieldy,3)*size(fieldy,4)) => fieldy(:,:,:,:)
+
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -618,7 +621,7 @@
     subroutine MPP_UPDATE_DOMAINS_5D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 5D field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:,:), fieldy(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:,:,:), fieldy(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -626,12 +629,12 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4)*size(fieldx,5))
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4)*size(fieldy,5))
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
+
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:size(fieldx,3)*size(fieldx,4)*size(fieldx,5)) => fieldx(:,:,:,:,:)
+      field3Dy(1:size(fieldy,1),1:size(fieldy,2),1:size(fieldy,3)*size(fieldy,4)*size(fieldy,5)) => fieldy(:,:,:,:,:)
+
       call mpp_update_domains( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
 
