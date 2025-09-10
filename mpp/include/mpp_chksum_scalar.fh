@@ -29,14 +29,14 @@
 !! result is i8_kind, which will actually be int ifdef no_8byte_integers
 !! mold and mask_val must be same numBytes, otherwise undefined behavior
 function MPP_CHKSUM_( var, pelist, mask_val )
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   integer(i8_kind) :: MPP_CHKSUM_
-  MPP_TYPE_, intent(in) :: var
+  MPP_TYPE_, target, intent(in) :: var
   integer, intent(in), optional :: pelist(:)
-  integer(i8_kind) :: mold(1)
   MPP_TYPE_, intent(in), optional :: mask_val
-  pointer( p, mold )
+  integer(i8_kind), pointer :: mold(:)
 
-  p = LOC(var)
+  call c_f_pointer(c_loc(var), mold, [1])
 
   if ( PRESENT(mask_val) ) then
     MPP_CHKSUM_ = mpp_chksum( mold, pelist, TRANSFER(mask_val, mold(1)) )
