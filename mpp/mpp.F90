@@ -1383,6 +1383,20 @@ private
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
 
+  !> @brief converts c_ptr to integer address for pointer arithmetics
+  !!
+  !! hack of Fortran language for getting integer representation of c_ptr
+  !!
+  !> @param[in] pointer   pointer which address should be presented as integer
+  !> @return              integer representation of pointer's address
+  !> @author       Igor S. Gerasimov (foxtranigor@gmail.com)
+  pure function get_pointer_address(pointer) result(address)
+    use, intrinsic :: iso_c_binding, only: c_ptr, c_intptr_t
+    type(c_ptr), intent(in) :: pointer
+    integer(c_intptr_t) :: address
+    address = transfer(pointer, address)
+  end function get_pointer_address
+
   end module mpp_mod
 !> @}
 ! close documentation grouping
