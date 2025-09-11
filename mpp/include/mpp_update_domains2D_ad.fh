@@ -21,7 +21,7 @@
     !> Updates data domain of 2D ad field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_2D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-      MPP_TYPE_,        intent(inout)        :: field(:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -30,9 +30,9 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
-      pointer( ptr, field3D )
-      ptr = LOC(field)
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+      field3D(1:size(field,1),1:size(field,2),1:1) => field(:,:)
+
       call mpp_update_domains_ad( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count )
       return
@@ -178,7 +178,7 @@
     !> Updates data domain of 4D ad field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_4D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -187,9 +187,9 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
-      pointer( ptr, field3D )
-      ptr = LOC(field)
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+      field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)) => field(:,:,:,:)
+
       call mpp_update_domains_ad( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -198,7 +198,7 @@
    !> Updates data domain of 5D ad field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_5D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count )
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -207,10 +207,9 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+      field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)*size(field,5)) => field(:,:,:,:,:)
 
-      pointer( ptr, field3D )
-      ptr = LOC(field)
       call mpp_update_domains_ad( field3D, domain, flags, complete, position, &
                                whalo, ehalo, shalo, nhalo, name, tile_count )
       return
@@ -224,7 +223,7 @@
     subroutine MPP_UPDATE_DOMAINS_AD_2D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 2D ad field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:), fieldy(:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:), fieldy(:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -232,12 +231,11 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),1)
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),1)
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:1) => fieldx(:,:)
+      field3Dx(1:size(fieldy,1),1:size(fieldy,2),1:1) => fieldy(:,:)
+
       call mpp_update_domains_ad( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -422,7 +420,7 @@
     subroutine MPP_UPDATE_DOMAINS_AD_4D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 4D ad field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:), fieldy(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:,:), fieldy(:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -430,13 +428,11 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4))
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4))
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:size(fieldx,3)*size(fieldx,4)) => fieldx(:,:,:,:)
+      field3Dx(1:size(fieldy,1),1:size(fieldy,2),1:size(fieldy,3)*size(fieldy,4)) => fieldy(:,:,:,:)
 
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
       call mpp_update_domains_ad( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
       return
@@ -445,7 +441,7 @@
     subroutine MPP_UPDATE_DOMAINS_AD_5D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count )
 !updates data domain of 5D ad field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:,:,:), fieldy(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:,:,:), fieldy(:,:,:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -453,12 +449,11 @@
       character(len=*), intent(in), optional :: name
       integer,          intent(in), optional :: tile_count
 
-      MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4)*size(fieldx,5))
-      MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4)*size(fieldy,5))
-      pointer( ptrx, field3Dx )
-      pointer( ptry, field3Dy )
-      ptrx = LOC(fieldx)
-      ptry = LOC(fieldy)
+      MPP_TYPE_, pointer :: field3Dx(:,:,:)
+      MPP_TYPE_, pointer :: field3Dy(:,:,:)
+      field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:size(fieldx,3)*size(fieldx,4)*size(fieldx,5)) => fieldx(:,:,:,:,:)
+      field3Dx(1:size(fieldy,1),1:size(fieldy,2),1:size(fieldy,3)*size(fieldy,4)*size(fieldy,5)) => fieldy(:,:,:,:,:)
+
       call mpp_update_domains_ad( field3Dx, field3Dy, domain, flags, gridtype, complete, &
                                whalo, ehalo, shalo, nhalo, name, tile_count)
 
