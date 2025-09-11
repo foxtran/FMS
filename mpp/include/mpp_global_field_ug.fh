@@ -19,18 +19,16 @@
 !> @{
     subroutine MPP_GLOBAL_FIELD_UG_2D_( domain, local, global, flags, default_data)
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:)
-      MPP_TYPE_, intent(out) :: global(:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),1)
-      MPP_TYPE_ :: global3D(size(global,1),1)
-      pointer( lptr,  local3D )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC( local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:1) => local(:)
+      global3D(1:size(global,1),1:1) => global(:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
 
     end subroutine MPP_GLOBAL_FIELD_UG_2D_
@@ -171,35 +169,31 @@
 
    subroutine MPP_GLOBAL_FIELD_UG_4D_( domain, local, global, flags, default_data )
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:,:,:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2)*size( local,3))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2)*size( local,3)) => local(:,:,:)
+      global3D(1:size(global,1),1:size(global,2)*size(global,3)) => global(:,:,:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_4D_
 
     subroutine MPP_GLOBAL_FIELD_UG_5D_( domain, local, global, flags, default_data )
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:,:,:,:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2)*size( local,3)*size( local,4))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3)*size(global,4))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2)*size( local,3)*size( local,4)) => local(:,:,:,:)
+      global3D(1:size(global,1),1:size(global,2)*size(global,3)*size(global,4)) => global(:,:,:,:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_5D_
 !> @}
