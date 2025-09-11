@@ -35,7 +35,7 @@
       integer :: list, pos, msgsize
       integer :: to_pe, from_pe
       MPP_TYPE_, pointer :: buffer(:)
-      integer :: buffer_pos, wordlen, errunit
+      integer :: buffer_pos, errunit
 
 !fix ke
       errunit = stderr()
@@ -45,7 +45,6 @@
 
       buffer_pos = 0
       call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
-      wordlen = size(TRANSFER(buffer(1),mpp_domains_stakc))
 
 !pre-post recv
       n = d_comm%Rlist_size
