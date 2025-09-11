@@ -66,8 +66,8 @@
 
       local_stack_size  = domain%compute%size*size(local,2)
       remote_stack_size = domain%compute%max_size*size(local,2)
-      call c_f_pointer(c_loc(mpp_domains_stakc(1)),                  clocal,  [local_stack_size ])
-      call c_f_pointer(c_loc(mpp_domains_stakc(local_stack_size+1)), cremote, [remote_stack_size])
+      call c_f_pointer(c_loc(mpp_domains_stack(1)),                  clocal,  [local_stack_size ])
+      call c_f_pointer(c_loc(mpp_domains_stack(local_stack_size+1)), cremote, [remote_stack_size])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_UG: must first call mpp_domains_init.' )
 

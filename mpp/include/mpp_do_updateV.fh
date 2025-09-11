@@ -93,7 +93,7 @@
 
       l_size = size(f_addrsx,1)
       nlist = size(domain%list(:))
-      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
 !recv
       nsend_x = update_x%nsend

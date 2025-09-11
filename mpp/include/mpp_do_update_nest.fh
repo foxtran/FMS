@@ -61,7 +61,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
 
   send    = recv
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
   l_size = size(f_addrs(:))
 
   !--- pre-post receiving
@@ -316,7 +316,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_V_(f_addrsx, f_addrsy, nest_domain, update
 
   send    = recv
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
   l_size = size(f_addrsx(:))
 
   nrecv = get_nest_vector_recv(nest_domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)
@@ -702,7 +702,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
   pointer(ptr_field_in, field_in)
   pointer(ptr_field_out, field_out)
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
   l_size = size(f_addrs_in(:))
 
   !--- pre-post receiving
@@ -890,7 +890,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_V_(f_addrsx_in, f_addrsy_in, f_addrsx_ou
   pointer(ptr_fieldx_out, fieldx_out)
   pointer(ptr_fieldy_out, fieldy_out)
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
   l_size = size(f_addrsx_in(:))
 
   nrecv = get_nest_vector_recv(nest, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pelist)

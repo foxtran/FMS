@@ -48,8 +48,8 @@ module mpp_data_mod
 
   !--- All othere modules should import these parameters from mpp_domains_mod.
   !> public data which is used by mpp_domains_mod.
-  public :: mpp_domains_stakc, ptr_domains_stakc
-  public :: mpp_domains_stakc_nonblock, ptr_domains_stakc_nonblock
+  public :: mpp_domains_stack, ptr_domains_stakc
+  public :: mpp_domains_stack_nonblock, ptr_domains_stakc_nonblock
 
   !-------------------------------------------------------------------------------!
   ! The following data included in the .inc file are diffrent for sma or mpi case !

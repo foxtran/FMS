@@ -462,7 +462,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   endif
   if(nvector > 0) recv_y = group%recv_y
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
   !--- set reset_index_s and reset_index_v to 0
   group%reset_index_s = 0
@@ -695,7 +695,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   nrecv = group%nrecv
   nsend = group%nsend
 
-  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), buffer, [size(mpp_domains_stakc_nonblock)])
+  call c_f_pointer(c_loc(mpp_domains_stack_nonblock), buffer, [size(mpp_domains_stack_nonblock)])
 
   ! Make sure it is not in the middle of the old version of non-blocking halo update.
   if(num_update>0) call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: can not be called in the middle of "// &
@@ -774,7 +774,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
      ksize = group%ksize_v
   endif
   if(nvector > 0) recv_y = group%recv_y
-  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), buffer, [size(mpp_domains_stakc_nonblock)])
+  call c_f_pointer(c_loc(mpp_domains_stack_nonblock), buffer, [size(mpp_domains_stack_nonblock)])
 
   if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
     'mpp_start_group_update must be called before calling mpp_end_group_update')

@@ -108,8 +108,8 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV, ROOT_GLOBAL
   use mpp_parameter_mod,      only : NONBLOCK_UPDATE_TAG, EDGEONLY, EDGEUPDATE
   use mpp_parameter_mod,      only : NONSYMEDGE, NONSYMEDGEUPDATE
-  use mpp_data_mod,           only : mpp_domains_stakc, ptr_domains_stakc
-  use mpp_data_mod,           only : mpp_domains_stakc_nonblock, ptr_domains_stakc_nonblock
+  use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stakc
+  use mpp_data_mod,           only : mpp_domains_stack_nonblock, ptr_domains_stakc_nonblock
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
   use mpp_mod,                only : stdout, stderr, stdlog, mpp_send, mpp_recv, mpp_transmit, mpp_sync_self
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
