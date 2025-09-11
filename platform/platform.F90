@@ -29,7 +29,7 @@ module platform_mod
   integer, parameter :: r16_kind=QUAD_KIND, r8_kind=DOUBLE_KIND, r4_kind=FLOAT_KIND, &
                         c8_kind=DOUBLE_KIND, c4_kind=FLOAT_KIND, &
                         l8_kind=LONG_KIND, l4_kind=INT_KIND, &
-                        i8_kind=LONG_KIND, i4_kind=INT_KIND, i2_kind=SHORT_KIND, &
+                        i8_kind=LONG_KIND, i4_kind=INT_KIND, i2_kind=SHORT_KIND, i1_kind=BYTE_KIND, &
                         ptr_kind=POINTER_KIND
   integer, parameter :: FMS_PATH_LEN = FMS_MAX_PATH_LEN
   integer, parameter :: FMS_FILE_LEN = FMS_MAX_FILE_LEN
