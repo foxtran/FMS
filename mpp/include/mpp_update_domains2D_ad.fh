@@ -245,7 +245,8 @@
     subroutine MPP_UPDATE_DOMAINS_AD_3D_V_( fieldx, fieldy, domain, flags, gridtype, complete, &
                                          whalo, ehalo, shalo, nhalo, name, tile_count)
 !updates data domain of 3D ad field whose computational domains have been computed
-      MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:), fieldy(:,:,:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+      MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:), fieldy(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags, gridtype
       logical,          intent(in), optional :: complete
@@ -257,7 +258,7 @@
       integer                                :: grid_offset_type
       logical                                :: exchange_uv
 
-      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=-9999, f_addrsy=-9999
+      type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrsx=c_null_ptr, f_addrsy=c_null_ptr
       logical          :: do_update, is_complete
       integer, save    :: isize(2)=0,jsize(2)=0,ke=0,l_size=0, offset_type=0, list=0
       integer, save    :: whalosz, ehalosz, shalosz, nhalosz
@@ -338,8 +339,8 @@
          call mpp_error(FATAL,'MPP_UPDATE_AD_3D_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
       endif
 
-      f_addrsx(list, tile) = LOC(fieldx)
-      f_addrsy(list, tile) = LOC(fieldy)
+      f_addrsx(list, tile) = c_loc(fieldx)
+      f_addrsy(list, tile) = c_loc(fieldy)
 
       if(list == 1 .AND. tile == 1)then
          isize(1)=size(fieldx,1); jsize(1)=size(fieldx,2); ke = size(fieldx,3)
@@ -410,7 +411,7 @@
                     d_type,ke,grid_offset_type, flags)
             end if
          end if
-         l_size=0; f_addrsx=-9999; f_addrsy=-9999; isize=0;  jsize=0;  ke=0
+         l_size=0; f_addrsx=c_null_ptr; f_addrsy=c_null_ptr; isize=0;  jsize=0;  ke=0
       end if
 
       return
