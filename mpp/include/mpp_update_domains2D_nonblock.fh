@@ -41,7 +41,7 @@ end function MPP_START_UPDATE_DOMAINS_2D_
 
 function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete )
-  use, intrinsic :: iso_c_binding, only: c_loc
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc, c_associated
   use mpp_mod, only: get_pointer_address
 
   type(domain2D),   intent(inout)        :: domain
@@ -66,7 +66,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   integer, save              :: pos, whalosz, ehalosz, shalosz, nhalosz, update_flags_saved
   character(len=128)         :: text, field_name
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(i8_kind), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  type(c_ptr), save          :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
   type(overlapSpec), pointer :: update => NULL()
   MPP_TYPE_                  :: d_type
 
@@ -140,14 +140,14 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrs(list,tile) = get_pointer_address(c_loc(field))
+  f_addrs(list,tile) = c_loc(field)
   ke_list(list,tile) = size(field,3)
 
   !make sure the field is not called mpp_start_update_domains. Currently we only check the address at tile = 1.
   if( tile == 1 ) then
      do n = 1, current_id_update
         do l = 1, nonblock_data(n)%nfields
-           if( f_addrs(list,tile) == nonblock_data(n)%field_addrs(l)) then
+           if(c_associated(f_addrs(list,tile), nonblock_data(n)%field_addrs(l))) then
               call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_3D is called again before calling ' //&
               'mpp_complte_UPDATE_DOMAINS_3D for field '//trim(field_name))
            endif
@@ -231,7 +231,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
         call mpp_start_do_update(current_id, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
                                  ke_max, ke_list(1:l_size,1:ntile), update_flags, reuse_id_update, field_name )
      endif
-     l_size=0; f_addrs=-9999; isize=0;  jsize=0;  ke_list=0
+     l_size=0; f_addrs=c_null_ptr; isize=0;  jsize=0;  ke_list=0
   else
      if(present(update_id)) then
         MPP_START_UPDATE_DOMAINS_3D_ = update_id
@@ -313,7 +313,7 @@ end subroutine MPP_COMPLETE_UPDATE_DOMAINS_2D_
 !##################################################################################
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, position, &
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
-  use, intrinsic :: iso_c_binding, only: c_loc
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc, c_associated
   use mpp_mod, only: get_pointer_address
   integer,          intent(in)           :: id_update
   type(domain2D),   intent(inout)        :: domain
@@ -336,7 +336,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
   integer                    :: ke_max
   integer, save              :: list=0, l_size=0
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(i8_kind), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  type(c_ptr), save          :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
   character(len=128)         :: text
   MPP_TYPE_        :: d_type
 
@@ -398,10 +398,10 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_COMPLETE_UPDATE_DOMAINS_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrs(list, tile) = get_pointer_address(c_loc(field))
+  f_addrs(list, tile) = c_loc(field)
   !-- make sure the f_addrs match the one at mpp_start_update_domains
   if( tile == 1 ) then
-     if( nonblock_data(id_update)%field_addrs(list) .NE. f_addrs(list, tile)) then
+     if(.NOT. c_associated(nonblock_data(id_update)%field_addrs(list), f_addrs(list, tile))) then
         call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_3D: "// &
              "mismatch of address between mpp_start_update_domains and mpp_complete_update_domains")
      endif
@@ -447,8 +447,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
                                     ke_max, ke_list(1:l_size,1:ntile), update_flags)
      endif
      nonblock_data(id_update)%nfields = 0
-     nonblock_data(id_update)%field_addrs(1:l_size) = 0
-     l_size=0; f_addrs=-9999; ke_list=0
+     nonblock_data(id_update)%field_addrs(1:l_size) = c_null_ptr
+     l_size=0; f_addrs=c_null_ptr; ke_list=0
      !--- For the last call of mpp_complete_update_domains
      !--- reset everything to init state
      if( num_update == 0) then
@@ -534,7 +534,7 @@ end function MPP_START_UPDATE_DOMAINS_2D_V_
 function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype, &
      whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete )
   !updates data domain of 3D field whose computational domains have been computed
-  use, intrinsic :: iso_c_binding, only: c_loc
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc, c_associated
   use mpp_mod, only: get_pointer_address
   MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:), fieldy(:,:,:)
   type(domain2D),   intent(inout)        :: domain
@@ -555,8 +555,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
   integer,            save    :: whalosz, ehalosz, shalosz, nhalosz
   integer,            save    :: isize(2)=0,jsize(2)=0,l_size=0, offset_type=0, list=0
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  type(c_ptr), save           :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
+  type(c_ptr), save           :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
   type(overlapSpec),  pointer :: updatex => NULL()
   type(overlapSpec),  pointer :: updatey => NULL()
   MPP_TYPE_                   :: d_type
@@ -638,14 +638,15 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
      call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
 
-  f_addrsx(list, tile) = get_pointer_address(c_loc(fieldx))
-  f_addrsy(list, tile) = get_pointer_address(c_loc(fieldy))
+  f_addrsx(list, tile) = c_loc(fieldx)
+  f_addrsy(list, tile) = c_loc(fieldy)
 
   if( tile == 1 ) then
      do n = 1, current_id_update
         do l = 1, nonblock_data(n)%nfields
-           if( f_addrsx(list,tile) == nonblock_data(n)%field_addrs(l)  .OR. &
-               f_addrsy(list,tile) == nonblock_data(n)%field_addrs2(l)) then
+           if( .NOT. c_associated(f_addrsx(list,tile)) .OR. .NOT. c_associated(f_addrsy(list,tile)) .OR. &
+               c_associated(f_addrsx(list,tile), nonblock_data(n)%field_addrs(l)) .OR. &
+               c_associated(f_addrsy(list,tile), nonblock_data(n)%field_addrs2(l))) then
               call mpp_error(FATAL,'MPP_START_UPDATE_DOMAINS_V is called again before calling ' //&
               'mpp_complte_UPDATE_DOMAINS_V for field '//trim(field_name))
            endif
@@ -761,7 +762,7 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
                                     update_flags, reuse_id_update, field_name)
         endif
      endif
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; isize=0;  jsize=0;  ke_list=0
+     l_size=0; f_addrsx=c_null_ptr; f_addrsy=c_null_ptr; isize=0;  jsize=0;  ke_list=0
   else
      if(present(update_id)) then
         MPP_START_UPDATE_DOMAINS_3D_V_ = update_id
@@ -852,7 +853,7 @@ end subroutine MPP_COMPLETE_UPDATE_DOMAINS_2D_V_
 subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain, flags, gridtype, &
      whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   !updates data domain of 3D field whose computational domains have been computed
-  use, intrinsic :: iso_c_binding, only: c_loc
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc, c_associated
   use mpp_mod, only: get_pointer_address
   integer,          intent(in)           :: id_update
   MPP_TYPE_, target, contiguous, intent(inout) :: fieldx(:,:,:), fieldy(:,:,:)
@@ -871,8 +872,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   character(len=128)          :: text
   integer,            save    :: l_size=0, list=0
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
-  integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
+  type(c_ptr), save           :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
+  type(c_ptr), save           :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=c_null_ptr
   type(overlapSpec),  pointer :: updatex => NULL()
   type(overlapSpec),  pointer :: updatey => NULL()
   MPP_TYPE_                   :: d_type
@@ -967,12 +968,12 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
      call mpp_error(FATAL,'MPP_UPDATE_3D_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
 
-  f_addrsx(list, tile) = get_pointer_address(c_loc(fieldx))
-  f_addrsy(list, tile) = get_pointer_address(c_loc(fieldy))
+  f_addrsx(list, tile) = c_loc(fieldx)
+  f_addrsy(list, tile) = c_loc(fieldy)
   !-- make sure the f_addrs match the one at mpp_start_update_domains
   if( tile == 1 ) then
-     if( nonblock_data(id_update)%field_addrs(list) .NE. f_addrsx(list, tile) .OR. &
-         nonblock_data(id_update)%field_addrs2(list) .NE. f_addrsy(list, tile)) then
+     if( .NOT. c_associated(nonblock_data(id_update)%field_addrs(list), f_addrsx(list, tile)) .OR. &
+         .NOT. c_associated(nonblock_data(id_update)%field_addrs2(list), f_addrsy(list, tile))) then
         call mpp_error(FATAL, "MPP_COMPLETE_UPDATE_DOMAINS_V: "// &
              "mismatch of address between mpp_start_update_domains and mpp_complete_update_domains")
      endif
@@ -1026,9 +1027,9 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
         endif
      endif
      nonblock_data(id_update)%nfields = 0
-     nonblock_data(id_update)%field_addrs(1:l_size) = 0
-     nonblock_data(id_update)%field_addrs2(1:l_size) = 0
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; ke_list=0
+     nonblock_data(id_update)%field_addrs(1:l_size) = c_null_ptr
+     nonblock_data(id_update)%field_addrs2(1:l_size) = c_null_ptr
+     l_size=0; f_addrsx=c_null_ptr; f_addrsy=c_null_ptr; ke_list=0
      !--- For the last call of mpp_complete_update_domains
      !--- reset everything to init state
      if( num_update == 0) then
