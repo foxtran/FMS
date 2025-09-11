@@ -21,8 +21,8 @@
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
                                    d_type, ke, gridtype, flags)
-      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
-      integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      type(c_ptr),         intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: update_x, update_y
       integer,             intent(in)        :: ke
@@ -30,10 +30,9 @@
       integer, intent(in)                    :: gridtype
       integer, intent(in),          optional :: flags
 
-      MPP_TYPE_ :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke)
-      MPP_TYPE_ :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke)
-      pointer(ptr_fieldx, fieldx)
-      pointer(ptr_fieldy, fieldy)
+      MPP_TYPE_, pointer :: fieldx(:,:,:), fieldy(:,:,:)
+      MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+      integer :: shapex(3), shapey(3) !< shapes of fieldx and fieldy
 
       integer :: update_flags
       integer :: l_size, l, i, j, k, is, ie, js, je, n, m
@@ -53,6 +52,9 @@
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y, outunit
 
+
+      shapex = [update_x%xend-update_x%xbegin+1, update_x%yend-update_x%ybegin+1, ke]
+      shapey = [update_y%xend-update_y%xbegin+1, update_y%yend-update_y%ybegin+1, ke]
       outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) then
@@ -340,8 +342,10 @@
                      select case( update_x%send(ind_x)%rotation(n) )
                      case(ZERO)
                         do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l,tMe)
-                           ptr_fieldy = f_addrsy(l,tMe)
+                           call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                           fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr(:,:,:)
+                           call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                           fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr(:,:,:)
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
@@ -355,8 +359,10 @@
                      case( MINUS_NINETY )
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = is, ie
                                     do j = je, js, -1
@@ -369,8 +375,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = is, ie
                                     do j = je, js, -1
@@ -385,8 +393,10 @@
                      case( NINETY )
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = ie, is, -1
                                     do j = js, je
@@ -399,8 +409,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = ie, is, -1
                                     do j = js, je
@@ -415,8 +427,10 @@
                      case( ONE_HUNDRED_EIGHTY )
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -429,8 +443,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l,tMe)
-                              ptr_fieldy = f_addrsy(l,tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -467,8 +483,10 @@
                      select case( update_x%send(ind_x)%rotation(n) )
                      case(ZERO)
                         do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
+                           call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                           fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                           call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                           fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
@@ -481,8 +499,10 @@
                      case(MINUS_NINETY)
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = is, ie
                                     do j = je, js, -1
@@ -494,8 +514,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = is, ie
                                     do j = je, js, -1
@@ -508,8 +530,10 @@
                         end if
                      case(NINETY)
                         do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
+                           call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                           fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                           call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                           fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                            do k = 1, ke
                               do i = ie, is, -1
                                  do j = js, je
@@ -522,8 +546,10 @@
                      case(ONE_HUNDRED_EIGHTY)
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -535,8 +561,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -569,8 +597,10 @@
                      select case( update_y%send(ind_y)%rotation(n) )
                      case(ZERO)
                         do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
+                           call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                           fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                           call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                           fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                            do k = 1,ke
                               do j = js, je
                                  do i = is, ie
@@ -582,8 +612,10 @@
                         end do
                      case(MINUS_NINETY)
                         do l=1,l_size  ! loop over number of fields
-                           ptr_fieldx = f_addrsx(l, tMe)
-                           ptr_fieldy = f_addrsy(l, tMe)
+                           call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                           fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                           call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                           fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                            do k = 1,ke
                               do i = is, ie
                                  do j = je, js, -1
@@ -596,8 +628,10 @@
                      case(NINETY)
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = ie, is, -1
                                     do j = js, je
@@ -609,8 +643,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do i = ie, is, -1
                                     do j = js, je
@@ -624,8 +660,10 @@
                      case(ONE_HUNDRED_EIGHTY)
                         if( BTEST(update_flags,SCALAR_BIT) ) then
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -637,8 +675,10 @@
                            end do
                         else
                            do l=1,l_size  ! loop over number of fields
-                              ptr_fieldx = f_addrsx(l, tMe)
-                              ptr_fieldy = f_addrsy(l, tMe)
+                              call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                              fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                              call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                              fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                               do k = 1,ke
                                  do j = je, js, -1
                                     do i = ie, is, -1
@@ -704,8 +744,10 @@
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
                      do l=1, l_size  ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = js, je
                               do i = is, ie
@@ -740,8 +782,10 @@
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
                      do l=1,l_size  ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = js, je
                               do i = is, ie
@@ -772,8 +816,10 @@
                      pos = buffer_pos - msgsize
                      buffer_pos = pos
                      do l=1,l_size  ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = js, je
                               do i = is, ie
@@ -818,8 +864,10 @@
                do i = is ,ie, midpoint
                   if( isd.LE.i .AND. i.LE. ied+shift )then
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -845,8 +893,10 @@
                      if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift  ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do i = isd,is-1
                               fieldx(i,j,k) = fieldx(2*is-i,j,k)
@@ -861,7 +911,8 @@
                      if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do i = isd,is-1
                               fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
@@ -882,8 +933,10 @@
                   is = is + shift
                   ie = ie + shift
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do i = is,ie
                            fieldx(i,j,k) = -fieldx(i,j,k)
@@ -893,7 +946,8 @@
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do i = is, ie
                            fieldy(i,j,k) = -fieldy(i,j,k)
@@ -917,8 +971,10 @@
                do i = is ,ie, midpoint
                   if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -941,8 +997,10 @@
                      if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south BGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do i = domain%x(1)%domain_data%begin,is-1
                               fieldx(i,j,k) = fieldx(2*is-i,j,k)
@@ -957,7 +1015,8 @@
                      if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do i = domain%x(1)%domain_data%begin,is-1
                               fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
@@ -978,8 +1037,10 @@
                   is = is + shift
                   ie = ie + shift
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do i = is,ie
                            fieldx(i,j,k) = -fieldx(i,j,k)
@@ -989,7 +1050,8 @@
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do i = is, ie
                            fieldy(i,j,k) = -fieldy(i,j,k)
@@ -1013,8 +1075,10 @@
                do j = js ,je, midpoint
                   if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE. domain%y(1)%domain_data%end+shift )then
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -1037,8 +1101,10 @@
                      if( 2*js-domain%y(1)%domain_data%begin.GT.domain%y(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west BGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i,2*js-j,k)
@@ -1053,7 +1119,8 @@
                      if( 2*js-domain%y(1)%domain_data%begin-1.GT.domain%y(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
@@ -1074,8 +1141,10 @@
                   js = js + shift
                   je = je + shift
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do j = js,je
                            fieldx(i,j,k) = -fieldx(i,j,k)
@@ -1085,7 +1154,8 @@
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do j = js, je
                            fieldx(i,j,k) = -fieldx(i,j,k)
@@ -1109,8 +1179,10 @@
                do j = js ,je, midpoint
                   if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE. domain%y(1)%domain_data%end+shift )then
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            fieldx(i,j,k) = 0.
                            fieldy(i,j,k) = 0.
@@ -1133,8 +1205,10 @@
                      if( 2*js-domain%y(1)%domain_data%begin.GT.domain%y(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east BGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
-                        ptr_fieldy = f_addrsy(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                        call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                        fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i,2*js-j,k)
@@ -1149,7 +1223,8 @@
                      if( 2*js-domain%y(1)%domain_data%begin-1.GT.domain%y(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east CGRID_NE west edge ubound error.' )
                      do l=1,l_size
-                        ptr_fieldx = f_addrsx(l, 1)
+                        call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                        fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
                         do k = 1,ke
                            do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
@@ -1170,8 +1245,10 @@
                   js = js + shift
                   je = je + shift
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
-                     ptr_fieldy = f_addrsy(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
+                     call c_f_pointer(f_addrsy(l,1), tmpptr, shape=shapey)
+                     fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do j = js,je
                            fieldx(i,j,k) = -fieldx(i,j,k)
@@ -1181,7 +1258,8 @@
                   end do
                case(CGRID_NE)
                   do l=1,l_size
-                     ptr_fieldx = f_addrsx(l, 1)
+                     call c_f_pointer(f_addrsx(l,1), tmpptr, shape=shapex)
+                     fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,1:ke) => tmpptr
                      do k = 1,ke
                         do j = js, je
                            fieldx(i,j,k) = -fieldx(i,j,k)
