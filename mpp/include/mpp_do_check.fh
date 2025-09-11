@@ -52,7 +52,7 @@
       integer :: outunit
 
       outunit = stdout()
-      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
       l_size = size(f_addrs,1)
 
       update_flags = XUPDATE+YUPDATE   !default

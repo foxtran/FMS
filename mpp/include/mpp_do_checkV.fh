@@ -60,7 +60,7 @@
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
       l_size = size(f_addrsx,1)
       nlist = size(domain%list(:))
-      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
       !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds
       !--- (domain is symmetry or folded north edge). North bound will be checked when north edge is folded.

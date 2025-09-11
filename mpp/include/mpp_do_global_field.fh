@@ -50,8 +50,8 @@
 
       local_stack_size  = (domain%x(1)%compute%size+ishift)    *(domain%y(1)%compute%size+jshift)    *size(local,3)
       remote_stack_size = (domain%x(1)%compute%max_size+ishift)*(domain%y(1)%compute%max_size+jshift)*size(local,3)
-      call c_f_pointer(c_loc(mpp_domains_stakc(1)),                  clocal,  [local_stack_size ])
-      call c_f_pointer(c_loc(mpp_domains_stakc(local_stack_size+1)), cremote, [remote_stack_size])
+      call c_f_pointer(c_loc(mpp_domains_stack(1)),                  clocal,  [local_stack_size ])
+      call c_f_pointer(c_loc(mpp_domains_stack(local_stack_size+1)), cremote, [remote_stack_size])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 

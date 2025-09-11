@@ -38,8 +38,8 @@ integer, parameter :: mpp_from_pe = -999, ptr_from = -999
 !-------------------------------------------------------------------!
 ! The following data is used in mpp_domains_mod and its components  !
 !-------------------------------------------------------------------!
-real(r8_kind), target, allocatable :: mpp_domains_stakc(:)
-real(r8_kind), target, allocatable :: mpp_domains_stakc_nonblock(:)
+real(r8_kind), target, allocatable :: mpp_domains_stack(:)
+real(r8_kind), target, allocatable :: mpp_domains_stack_nonblock(:)
 !--- some dummy variables with dummy values that will never be used
 type(c_ptr), parameter :: ptr_domains_stakc = c_null_ptr
 type(c_ptr), parameter :: ptr_domains_stakc_nonblock = c_null_ptr

@@ -80,7 +80,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   ke_sum = sum(ke_list)
   l_size = size(f_addrsx,1)
   nlist  = size(domain%list(:))
-  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), buffer, [size(mpp_domains_stakc_nonblock)])
+  call c_f_pointer(c_loc(mpp_domains_stack_nonblock), buffer, [size(mpp_domains_stack_nonblock)])
 
   nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
   nsend = get_vector_send(domain, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pe_list)
@@ -592,7 +592,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   ke_sum = sum(ke_list)
   l_size = size(f_addrsx,1)
   nlist  = size(domain%list(:))
-  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), recv_buffer, [size(mpp_domains_stakc_nonblock)])
+  call c_f_pointer(c_loc(mpp_domains_stack_nonblock), recv_buffer, [size(mpp_domains_stack_nonblock)])
 
   nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
 

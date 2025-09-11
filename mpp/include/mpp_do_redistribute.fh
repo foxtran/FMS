@@ -44,7 +44,7 @@
       domain_in =>d_comm%domain_in; domain_out =>d_comm%domain_out
 
       buffer_pos = 0
-      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
 !pre-post recv
       n = d_comm%Rlist_size
