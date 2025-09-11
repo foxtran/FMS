@@ -25,6 +25,7 @@
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_V_(f_addrsx,f_addrsy, domain, check_x, check_y, &
                                    d_type, ke, flags, name)
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: check_x, check_y
@@ -43,8 +44,7 @@
       integer :: pos, nlist, msgsize
       integer :: to_pe, from_pe
       integer :: tMe
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer(ptr,buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos
       character(len=8) :: text
       character(len=64) :: field_name
@@ -60,7 +60,7 @@
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
       l_size = size(f_addrsx,1)
       nlist = size(domain%list(:))
-      ptr = LOC(mpp_domains_stack)
+      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
 
       !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds
       !--- (domain is symmetry or folded north edge). North bound will be checked when north edge is folded.

@@ -20,6 +20,7 @@
 !> @{
 subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags, &
                                   &  reuse_id_update, name)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   integer,                    intent(in) :: id_update
   integer(i8_kind),         intent(in) :: f_addrs(:,:)
   type(domain2D),             intent(in) :: domain
@@ -40,9 +41,8 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
   integer                     :: request
   integer                     :: send_msgsize(MAXLIST)
   character(len=128)          :: text
-  MPP_TYPE_                   :: buffer(size(mpp_domains_stack_nonblock(:)))
+  MPP_TYPE_, pointer          :: buffer(:)
   MPP_TYPE_                   :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke_max)
-  pointer( ptr, buffer )
   pointer(ptr_field, field)
 
   update_edge_only = BTEST(flags, EDGEONLY)
@@ -68,7 +68,7 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
 
   l_size = size(f_addrs,1)
   ke_sum = sum(ke_list)
-  ptr = LOC(mpp_domains_stack_nonblock)
+  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), buffer, [size(mpp_domains_stakc_nonblock)])
 
   buffer_pos = nonblock_data(id_update)%recv_pos
 
@@ -257,6 +257,7 @@ end subroutine MPP_START_DO_UPDATE_3D_
 !###############################################################################
 
 subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, ke_max, ke_list, flags)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   integer,             intent(in) :: id_update
   integer(i8_kind),  intent(in) :: f_addrs(:,:)
   type(domain2d),      intent(in) :: domain
@@ -272,9 +273,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
   integer                     :: is, ie, js, je
   logical                     :: send(8), recv(8), update_edge_only
   integer                     :: l_size, ke_sum
-  MPP_TYPE_                   :: recv_buffer(size(mpp_domains_stack_nonblock(:)))
+  MPP_TYPE_, pointer          :: recv_buffer(:)
   MPP_TYPE_                   :: field(update%xbegin:update%xend, update%ybegin:update%yend,ke_max)
-  pointer( ptr, recv_buffer )
   pointer(ptr_field, field)
 
   update_edge_only = BTEST(flags, EDGEONLY)
@@ -300,7 +300,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
 
   ke_sum = sum(ke_list)
   l_size = size(f_addrs,1)
-  ptr = LOC(mpp_domains_stack_nonblock)
+  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), recv_buffer, [size(mpp_domains_stakc_nonblock)])
 
   count = update%nrecv
   if(count > 0) then
