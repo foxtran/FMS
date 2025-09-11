@@ -43,7 +43,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
 
   MPP_TYPE_, pointer :: buffer(:)
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
   outunit = stdout()
   l_size = size(f_addrs,1)
@@ -364,7 +364,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
 
   MPP_TYPE_, pointer :: buffer(:)
 
-  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
   outunit = stdout()
   l_size = size(f_addrsx,1)
