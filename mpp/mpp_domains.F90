@@ -94,6 +94,8 @@ module mpp_domains_mod
   use mpi
 #endif
 
+  use, intrinsic :: iso_c_binding, only : c_ptr
+
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -564,8 +566,8 @@ module mpp_domains_mod
      integer, dimension(MAX_REQUEST) :: type_recv
      integer, dimension(MAX_REQUEST) :: buffer_pos_send
      integer, dimension(MAX_REQUEST) :: buffer_pos_recv
-     integer(i8_kind)              :: field_addrs(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)              :: field_addrs2(MAX_DOMAIN_FIELDS)
+     type(c_ptr)                     :: field_addrs(MAX_DOMAIN_FIELDS)
+     type(c_ptr)                     :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields
   end type nonblock_type
 
