@@ -24,20 +24,18 @@
     !! global field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_2D_AD_( domain, local, global, flags, position,tile_count, default_data)
       type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(out)  ::  local(:,:)
-      MPP_TYPE_, intent(in) :: global(:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: local(:,:)
+      MPP_TYPE_, target, contiguous, intent(in) :: global(:,:)
       integer, intent(in), optional :: flags
       integer, intent(in), optional :: position
       integer, intent(in), optional :: tile_count
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),1)
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),1)
-      pointer( lptr,  local3D )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:,:)
+      MPP_TYPE_, pointer :: global3D(:,:,:)
       local = MPP_TYPE_INIT_VALUE
-      lptr = LOC( local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2),1:1) => local(:,:)
+      global3D(1:size(global,1),1:size(global,2),1:1) => global(:,:)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
 
     end subroutine MPP_GLOBAL_FIELD_2D_AD_
@@ -63,39 +61,35 @@
 
     subroutine MPP_GLOBAL_FIELD_4D_AD_( domain, local, global, flags, position,tile_count, default_data )
       type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(out)  ::  local(:,:,:,:)
-      MPP_TYPE_, intent(in) :: global(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: local(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in) :: global(:,:,:,:)
       integer, intent(in), optional :: flags
       integer, intent(in), optional :: position
       integer, intent(in), optional :: tile_count
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),size( local,3)*size(local,4))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(local,4))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:,:)
+      MPP_TYPE_, pointer :: global3D(:,:,:)
       local = MPP_TYPE_INIT_VALUE
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2),1:size( local,3)*size( local,4)) => local(:,:,:,:)
+      global3D(1:size(global,1),1:size(global,2),1:size(global,3)*size(global,4)) => global(:,:,:,:)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
     end subroutine MPP_GLOBAL_FIELD_4D_AD_
 
     subroutine MPP_GLOBAL_FIELD_5D_AD_( domain, local, global, flags, position,tile_count, default_data )
       type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(out)  ::  local(:,:,:,:,:)
-      MPP_TYPE_, intent(in) :: global(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: local(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in) :: global(:,:,:,:,:)
       integer, intent(in), optional :: flags
       integer, intent(in), optional :: position
       integer, intent(in), optional :: tile_count
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),size( local,3)*size( local,4)*size(local,5))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(global,4)*size(local,5))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:,:)
+      MPP_TYPE_, pointer :: global3D(:,:,:)
       local = MPP_TYPE_INIT_VALUE
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2),1:size( local,3)*size( local,4)*size(local,5)) => local(:,:,:,:,:)
+      global3D(1:size(global,1),1:size(global,2),1:size(global,3)*size(global,4)*size(local,5)) => global(:,:,:,:,:)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
     end subroutine MPP_GLOBAL_FIELD_5D_AD_
 !> @}
