@@ -25,14 +25,16 @@
 !Set type kinds.
 #ifdef PORTABLE_KINDS
 use,intrinsic :: iso_fortran_env, only: real128
-use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
-                                      c_int32_t,c_int16_t,c_intptr_t
+use,intrinsic :: iso_c_binding, only: c_double,c_float, &
+                                      c_int64_t,c_int32_t,c_int16_t, &
+                                      c_int8_t,c_intptr_t
 #define QUAD_KIND real128
 #define DOUBLE_KIND c_double
 #define FLOAT_KIND c_float
 #define LONG_KIND c_int64_t
 #define INT_KIND c_int32_t
 #define SHORT_KIND c_int16_t
+#define BYTE_KIND c_int8_t
 #define POINTER_KIND c_intptr_t
 #else
 !These values are not necessarily portable.
@@ -42,6 +44,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define LONG_KIND 8
 #define INT_KIND 4
 #define SHORT_KIND 2
+#define BYTE_KIND 1
 #define POINTER_KIND 8
 !DEC$ MESSAGE:'Using 8-byte addressing'
 #endif
