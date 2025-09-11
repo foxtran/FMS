@@ -37,10 +37,10 @@
     character(len=8) :: text
 
     if( n.LE.mpp_domains_stack_size )return
-    if( allocated(mpp_domains_stack) )deallocate(mpp_domains_stack)
-    allocate( mpp_domains_stack(n) )
-    if( allocated(mpp_domains_stack_nonblock) )deallocate(mpp_domains_stack_nonblock)
-    allocate( mpp_domains_stack_nonblock(n) )
+    if( allocated(mpp_domains_stakc) )deallocate(mpp_domains_stakc)
+    allocate( mpp_domains_stakc(n) )
+    if( allocated(mpp_domains_stakc_nonblock) )deallocate(mpp_domains_stakc_nonblock)
+    allocate( mpp_domains_stakc_nonblock(n) )
 
     mpp_domains_stack_size = n
     write( text,'(i8)' )n

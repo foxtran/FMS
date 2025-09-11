@@ -20,6 +20,7 @@
 !> @{
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_3D_( f_addrs, domain, update, d_type, ke, flags)
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: update
@@ -34,8 +35,7 @@
       character(len=8)            :: text
 
 !equate to mpp_domains_stack
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer( ptr, buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos
 
 !receive domains saved here for unpacking
@@ -51,7 +51,7 @@
 
 
       outunit = stdout()
-      ptr = LOC(mpp_domains_stack)
+      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
       l_size = size(f_addrs,1)
 
       update_flags = XUPDATE+YUPDATE   !default

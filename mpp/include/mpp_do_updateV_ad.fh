@@ -23,6 +23,7 @@
     !> Updates data domain of 3D ad field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_AD_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
                                    d_type, ke, gridtype, flags)
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: update_x, update_y
@@ -44,8 +45,7 @@
 
       integer,    allocatable :: msg1(:), msg2(:)
       logical :: send(8), recv(8), update_edge_only
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer(ptr,buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos
       integer :: buffer_recv_size, shift
       integer :: rank_x, rank_y, ind_x, ind_y, cur_rank
@@ -90,7 +90,7 @@
 
       l_size = size(f_addrsx,1)
       nlist = size(domain%list(:))
-      ptr = LOC(mpp_domains_stack)
+      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
 
 !recv
       nsend_x = update_x%nsend

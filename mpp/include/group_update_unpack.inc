@@ -17,7 +17,7 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
-!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) shared(nunpack,group,nscalar,buffer,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
 !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy, n,k )
   do n = nunpack, 1, -1
@@ -64,7 +64,7 @@ if( group%k_loop_inside ) then
      endif
   enddo
 else
-!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) shared(nunpack,group,nscalar,buffer,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
 !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
   do nk = nunpack*ksize, 1, -1

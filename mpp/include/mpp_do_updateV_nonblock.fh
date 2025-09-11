@@ -20,6 +20,7 @@
 !> @{
 subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
                                      d_type, ke_max, ke_list, gridtype, flags, reuse_id_update, name)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   integer,             intent(in) :: id_update
   integer(i8_kind),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
   type(domain2d),      intent(in) :: domain
@@ -49,11 +50,10 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   integer            :: start_pos_recv(update_x%nrecv+update_y%nrecv), start_pos_send(update_x%nsend+update_y%nsend)
   MPP_TYPE_          :: fieldx(update_x%xbegin:update_x%xend, update_x%ybegin:update_x%yend,ke_max)
   MPP_TYPE_          :: fieldy(update_y%xbegin:update_y%xend, update_y%ybegin:update_y%yend,ke_max)
-  MPP_TYPE_          :: buffer(size(mpp_domains_stack_nonblock(:)))
+  MPP_TYPE_, pointer :: buffer(:)
 
   pointer(ptr_fieldx, fieldx)
   pointer(ptr_fieldy, fieldy)
-  pointer( ptr, buffer )
 
   update_edge_only = BTEST(flags, EDGEONLY)
   recv = .false.
@@ -80,7 +80,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   ke_sum = sum(ke_list)
   l_size = size(f_addrsx,1)
   nlist  = size(domain%list(:))
-  ptr    = LOC(mpp_domains_stack_nonblock)
+  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), buffer, [size(mpp_domains_stakc_nonblock)])
 
   nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
   nsend = get_vector_send(domain, update_x, update_y, ind_send_x, ind_send_y, start_pos_send, to_pe_list)
@@ -537,6 +537,7 @@ end subroutine MPP_START_DO_UPDATE_3D_V_
 !###############################################################################
 subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
                                         d_type, ke_max, ke_list, gridtype, flags)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   integer,             intent(in) :: id_update
   integer(i8_kind),  intent(in) :: f_addrsx(:,:), f_addrsy(:,:)
   type(domain2d),      intent(in) :: domain
@@ -554,8 +555,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   pointer(ptr_fieldx, fieldx)
   pointer(ptr_fieldy, fieldy)
 
-  MPP_TYPE_ :: recv_buffer(size(mpp_domains_stack_nonblock(:)))
-  pointer( ptr, recv_buffer )
+  MPP_TYPE_, pointer :: recv_buffer(:)
 
   integer :: i, j, k, l, is, ie, js, je, n, ke_sum, l_size, m
   integer :: pos, nlist, msgsize, buffer_pos
@@ -592,7 +592,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   ke_sum = sum(ke_list)
   l_size = size(f_addrsx,1)
   nlist  = size(domain%list(:))
-  ptr = LOC(mpp_domains_stack_nonblock)
+  call c_f_pointer(c_loc(mpp_domains_stakc_nonblock), recv_buffer, [size(mpp_domains_stakc_nonblock)])
 
   nrecv = get_vector_recv(domain, update_x, update_y, ind_recv_x, ind_recv_y, start_pos_recv, from_pe_list)
 

@@ -18,6 +18,7 @@
 !> @addtogroup mpp_domains_mod
 !> @{
     subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer(i8_kind), intent(in)         :: f_in(:), f_out(:)
       type(DomainCommunicator2D), intent(in) :: d_comm
       MPP_TYPE_, intent(in)                  :: d_type
@@ -33,8 +34,7 @@
       integer :: ke
       integer :: list, pos, msgsize
       integer :: to_pe, from_pe
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer( ptr, buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos, wordlen, errunit
 
 !fix ke
@@ -44,8 +44,8 @@
       domain_in =>d_comm%domain_in; domain_out =>d_comm%domain_out
 
       buffer_pos = 0
-      ptr = LOC(mpp_domains_stack)
-      wordlen = size(TRANSFER(buffer(1),mpp_domains_stack))
+      call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
+      wordlen = size(TRANSFER(buffer(1),mpp_domains_stakc))
 
 !pre-post recv
       n = d_comm%Rlist_size
