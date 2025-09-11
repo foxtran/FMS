@@ -17,6 +17,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, d_type)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   type(domain2D), intent(in)      :: domain
   type(overlapSpec),  intent(in)  :: bound
   integer(i8_kind), intent(in)  :: f_addrs(:,:)
@@ -40,10 +41,9 @@ subroutine MPP_DO_GET_BOUNDARY_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, 
   character(len=8)        :: text
   integer                 :: outunit
 
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
+  MPP_TYPE_, pointer :: buffer(:)
 
-  pointer( ptr, buffer )
-  ptr = LOC(mpp_domains_stack)
+  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
 
   outunit = stdout()
   l_size = size(f_addrs,1)
@@ -326,6 +326,7 @@ end subroutine MPP_DO_GET_BOUNDARY_3D_
 
 subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy, b_addrsx, b_addrsy, &
                                         bsizex, bsizey, ke, d_type, flags, gridtype)
+  use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
   type(domain2D),     intent(in)  :: domain
   type(overlapSpec),  intent(in)  :: boundx, boundy
   integer(i8_kind), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
@@ -361,9 +362,9 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   character(len=8)        :: text
   integer                 :: outunit, shift, midpoint
 
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-  pointer( ptr, buffer )
-  ptr = LOC(mpp_domains_stack)
+  MPP_TYPE_, pointer :: buffer(:)
+
+  call c_f_pointer(c_loc(mpp_domains_stakc), buffer, [size(mpp_domains_stakc)])
 
   outunit = stdout()
   l_size = size(f_addrsx,1)

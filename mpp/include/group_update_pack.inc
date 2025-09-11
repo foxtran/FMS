@@ -17,7 +17,7 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
-!$OMP parallel do default(none) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) shared(npack,group,buffer,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is,ie,js,je,rotation, &
 !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
   do n = 1, npack
@@ -238,7 +238,7 @@ if( group%k_loop_inside ) then
      endif
   enddo
 else
-!$OMP parallel do default(none) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) shared(npack,group,buffer,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is,ie,js,je,rotation, &
 !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
   do nk = 1, npack*ksize
