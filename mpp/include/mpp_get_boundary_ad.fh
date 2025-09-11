@@ -418,7 +418,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D_V: nbufferx should not be present when north is folded')
      if(.not. need_nbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: nbufferx should not be present')
-     b_addrsx(4, list, tile) = get_pointer_address(c_loc(nbufferx)
+     b_addrsx(4, list, tile) = get_pointer_address(c_loc(nbufferx))
      bufferx_size(4) = size(nbufferx,1)
   else
      b_addrsx(4, list, tile) = 0
