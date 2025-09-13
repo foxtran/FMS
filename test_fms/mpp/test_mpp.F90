@@ -21,19 +21,22 @@
 
 
 program test   !test various aspects of mpp_mod
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer, c_loc
   use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, mpp_commID, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
   use mpp_mod, only : mpp_gather, mpp_error, FATAL, mpp_sync_self
+  use mpp_mod, only : get_pointer_address
   use platform_mod
 
   implicit none
 
   integer, parameter              :: n=1048576
   real, allocatable, dimension(:) :: a, b, c
-  real, allocatable, dimension(:) :: d
-  integer(i8_kind) :: locd
+  real, allocatable, dimension(:), target :: d
+  type(c_ptr) :: locd
+  integer(i8_kind) :: locd_i8
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
   integer                         :: out_unit
@@ -59,9 +62,10 @@ program test   !test various aspects of mpp_mod
 !test of pointer sharing
   if( pe.EQ.root )then
       allocate( d(n) )
-      locd = LOC(d)
+      locd = c_loc(d)
+      locd_i8 = get_pointer_address(locd)
   end if
-  call mpp_broadcast(locd,root)
+  call mpp_broadcast(locd_i8,root)
   if( pe.EQ.root )then
       call random_number(d)
   end if
@@ -132,13 +136,13 @@ contains
   end subroutine test_mpp_commID
 
   subroutine test_shared_pointers(locd,n)
-    integer(i8_kind), intent(in) :: locd
+    type(c_ptr), intent(in) :: locd
     integer :: n
-    real :: dd(n)
-    pointer( p, dd )
+    real, pointer :: dd(:)
 
-    p = locd
-    print *, 'TEST_SHARED_POINTERS: pe, locd=', pe, locd
+    call c_f_pointer(locd, dd, shape=[n])
+
+    print *, 'TEST_SHARED_POINTERS: pe, locd=', pe, get_pointer_address(locd)
 !    print *, 'TEST_SHARED_POINTERS: pe, chksum(d)=', pe, mpp_chksum(dd,(/pe/))
     print *, 'TEST_SHARED_POINTERS: pe, sum(d)=', pe, sum(dd)
     return
