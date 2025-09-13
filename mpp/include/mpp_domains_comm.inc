@@ -26,11 +26,12 @@
 !> @{
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
                                         isize_in,jsize_in,ksize_in,isize_out,jsize_out,ksize_out) RESULT(d_comm)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_associated
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain_in
-      integer(i8_kind),         intent(in)    :: l_addrs_in(:)
+      type(c_ptr),                intent(in)    :: l_addrs_in(:)
       type(domain2D),target,      intent(in)    :: domain_out
-      integer(i8_kind),         intent(in)    :: l_addrs_out(:)
+      type(c_ptr),                intent(in)    :: l_addrs_out(:)
       integer,                    intent(in)    :: isize_in
       integer,                    intent(in)    :: jsize_in
       integer,                    intent(in)    :: ksize_in
@@ -81,7 +82,7 @@
 
     ! Create unique domain identifier
       list_size = size(l_addrs_in(:))
-      if(l_addrs_out(1) > 0)then
+      if(c_associated(l_addrs_out(1)))then
         domain_id = set_domain_id(domain_out%id,ke+list_size)
       else
         domain_id = set_domain_id(domain_in%id,ke+list_size)
@@ -210,13 +211,13 @@
                                         jsize_l, ksize,l_addr2,flags, position) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
       type(domain2D),target,      intent(in)    :: domain
-      integer(i8_kind),         intent(in)    :: l_addr
+      type(c_ptr),                intent(in)    :: l_addr
       integer,                    intent(in)    :: isize_g
       integer,                    intent(in)    :: jsize_g
       integer,                    intent(in)    :: isize_l
       integer,                    intent(in)    :: jsize_l
       integer,                    intent(in)    :: ksize
-      integer(i8_kind),optional,intent(in)    :: l_addr2
+      type(c_ptr),       optional,intent(in)    :: l_addr2
       integer, optional,          intent(in)    :: flags
       integer, optional,          intent(in)    :: position
 
@@ -434,15 +435,16 @@
     subroutine mpp_redistribute_free_comm(domain_in,l_addr,domain_out,l_addr2,ksize,lsize)
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_associated
       type(domain2D),             intent(in)    :: domain_in
-      integer(i8_kind),         intent(in)    :: l_addr
+      type(c_ptr),                intent(in)    :: l_addr
       type(domain2D),             intent(in)    :: domain_out
-      integer(i8_kind),         intent(in)    :: l_addr2
+      type(c_ptr),                intent(in)    :: l_addr2
       integer,                    intent(in)    :: ksize,lsize
 
       integer(i8_kind) :: domain_id
 
-      if(l_addr2 > 0)then
+      if(c_associated(l_addr2))then
         domain_id = set_domain_id(domain_out%id,ksize+lsize)
       else
         domain_id = set_domain_id(domain_in%id,ksize+lsize)
@@ -455,9 +457,9 @@
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
       type(domain2D),             intent(in)    :: domain
-      integer(i8_kind),         intent(in)    :: l_addr
+      type(c_ptr),                intent(in)    :: l_addr
       integer,                    intent(in)    :: ksize
-      integer(i8_kind),optional,intent(in)    :: l_addr2
+      type(c_ptr),       optional,intent(in)    :: l_addr2
       integer,           optional,intent(in)    :: flags
 
       integer :: update_flags
@@ -472,9 +474,11 @@
     subroutine free_comm(domain_id,l_addr,l_addr2)
     ! Since initialization of the d_comm type is expensive, freeing should be a rare
     ! event. Thus no attempt is made to salvage freed d_comm's.
+      use, intrinsic :: iso_c_binding, only: c_ptr
+      use mpp_mod, only: get_pointer_address
       integer(i8_kind),         intent(in) :: domain_id
-      integer(i8_kind),         intent(in) :: l_addr
-      integer(i8_kind),optional,intent(in) :: l_addr2
+      type(c_ptr),              intent(in) :: l_addr
+      type(c_ptr),     optional,intent(in) :: l_addr2
 
       integer(i8_kind) :: dc_key,a_key
       integer :: dc_idx,a_idx,i_idx,insert,insert_a,insert_i
@@ -482,10 +486,10 @@
 
 
       i_idx = find_key(domain_id,ids_sorted(1:n_ids),insert_i)
-      a_idx = find_key(l_addr,addrs_sorted(1:a_sort_len),insert_a)
+      a_idx = find_key(get_pointer_address(l_addr),addrs_sorted(1:a_sort_len),insert_a)
       a_key = int(addrs_idx(a_idx),KIND(i8_kind))
       if(PRESENT(l_addr2))then
-        a2_idx = find_key(l_addr2,addrs2_sorted(1:a2_sort_len),insert_a2)
+        a2_idx = find_key(get_pointer_address(l_addr2),addrs2_sorted(1:a2_sort_len),insert_a2)
         a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(i8_kind))
       endif
       dc_key = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(i8_kind)) + a_key
@@ -502,9 +506,10 @@
 
 
     function get_comm(domain_id,l_addr,l_addr2)
+      use mpp_mod, only: get_pointer_address
       integer(i8_kind),intent(in)       :: domain_id
-      integer(i8_kind),intent(in)       :: l_addr
-      integer(i8_kind),intent(in),optional :: l_addr2
+      type(c_ptr),     intent(in)       :: l_addr
+      type(c_ptr),     intent(in),optional :: l_addr2
       type(DomainCommunicator2D), pointer :: get_comm
 
       integer(i8_kind) :: dc_key,a_key
@@ -513,10 +518,10 @@
 
       if(.not.ALLOCATED(d_comm))ALLOCATE(d_comm(MAX_FIELDS))
       i_idx   = find_key(domain_id,ids_sorted(1:n_ids),insert_i)
-      a_idx = find_key(l_addr,addrs_sorted(1:a_sort_len),insert_a)
+      a_idx = find_key(get_pointer_address(l_addr),addrs_sorted(1:a_sort_len),insert_a)
       a_key = int(addrs_idx(a_idx),KIND(i8_kind))
       if(PRESENT(l_addr2))then
-        a2_idx = find_key(l_addr2,addrs2_sorted(1:a2_sort_len),insert_a2)
+        a2_idx = find_key(get_pointer_address(l_addr2),addrs2_sorted(1:a2_sort_len),insert_a2)
         a_key = a_key + ADDR2_BASE*int(addrs2_idx(a2_idx),KIND(i8_kind))
       endif
       dc_key   = DOMAIN_ID_BASE*int(ids_idx(i_idx),KIND(i8_kind)) + a_key
@@ -536,7 +541,7 @@
              call mpp_error(FATAL,'GET_COMM: Maximum number of memory addresses exceeded')
           endif
           n_addrs = n_addrs + 1
-          a_idx = push_key(addrs_sorted,addrs_idx,a_sort_len,insert_a,l_addr,n_addrs)
+          a_idx = push_key(addrs_sorted,addrs_idx,a_sort_len,insert_a,get_pointer_address(l_addr),n_addrs)
         endif
         if(PRESENT(l_addr2))then
           if(a2_idx<0)then
@@ -544,7 +549,7 @@
                call mpp_error(FATAL,'GET_COMM: Maximum number of 2nd memory addresses exceeded')
             endif
             n_addrs2 = n_addrs2 + 1
-            a2_idx = push_key(addrs2_sorted,addrs2_idx,a2_sort_len,insert_a2,l_addr2,n_addrs2)
+            a2_idx = push_key(addrs2_sorted,addrs2_idx,a2_sort_len,insert_a2,get_pointer_address(l_addr2),n_addrs2)
           endif
         endif
         if(n_comm == MAX_FIELDS)then
@@ -667,9 +672,9 @@
 
       d_comm%initialized=.false.
       d_comm%id=-9999
-      d_comm%l_addr  =-9999
-      d_comm%l_addrx =-9999
-      d_comm%l_addry =-9999
+      d_comm%l_addr  =c_null_ptr
+      d_comm%l_addrx =c_null_ptr
+      d_comm%l_addry =c_null_ptr
 
       if( allocated(d_comm%sendis) )   DEALLOCATE(d_comm%sendis);    !!d_comm%sendis =>NULL()
       if( allocated(d_comm%sendie) )   DEALLOCATE(d_comm%sendie);    !!d_comm%sendie =>NULL()
