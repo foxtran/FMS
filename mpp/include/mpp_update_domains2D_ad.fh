@@ -41,7 +41,8 @@
     !> Updates data domain of 3D ad field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_3D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
-      MPP_TYPE_,        intent(inout)        :: field(:,:,:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+      MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
       logical,          intent(in), optional :: complete
@@ -52,7 +53,7 @@
 
       integer                 :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo, ntile
 
-      integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=-9999
+      type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),save :: f_addrs=c_null_ptr
       integer          :: tile, max_ntile
       character(len=3) :: text
       logical          :: set_mismatch, is_complete
@@ -122,7 +123,7 @@
          write( text,'(i2)' ) MAX_DOMAIN_FIELDS
          call mpp_error(FATAL,'MPP_UPDATE_AD_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
       endif
-      f_addrs(list, tile) = LOC(field)
+      f_addrs(list, tile) = c_loc(field)
       update_position = CENTER
       if(present(position)) update_position = position
       if(list == 1 .AND. tile == 1 )then
@@ -169,7 +170,7 @@
 
 
          end if
-         l_size=0; f_addrs=-9999; isize=0;  jsize=0;  ke=0
+         l_size=0; f_addrs=c_null_ptr; isize=0;  jsize=0;  ke=0
       endif
       return
 
