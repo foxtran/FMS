@@ -94,7 +94,7 @@ module mpp_domains_mod
   use mpi
 #endif
 
-  use, intrinsic :: iso_c_binding, only : c_ptr
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_null_ptr
 
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
@@ -500,9 +500,9 @@ module mpp_domains_mod
      private
      logical            :: initialized=.false.
      integer(i8_kind) :: id=-9999
-     integer(i8_kind) :: l_addr  =-9999
-     integer(i8_kind) :: l_addrx =-9999
-     integer(i8_kind) :: l_addry =-9999
+     type(c_ptr) :: l_addr  =c_null_ptr
+     type(c_ptr) :: l_addrx =c_null_ptr
+     type(c_ptr) :: l_addry =c_null_ptr
      type(domain2D), pointer :: domain     =>NULL()
      type(domain2D), pointer :: domain_in  =>NULL()
      type(domain2D), pointer :: domain_out =>NULL()
