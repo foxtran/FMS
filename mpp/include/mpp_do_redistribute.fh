@@ -18,16 +18,14 @@
 !> @addtogroup mpp_domains_mod
 !> @{
     subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
-      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
-      integer(i8_kind), intent(in)         :: f_in(:), f_out(:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      type(c_ptr), intent(in)                :: f_in(:), f_out(:)
       type(DomainCommunicator2D), intent(in) :: d_comm
       MPP_TYPE_, intent(in)                  :: d_type
-      MPP_TYPE_ :: field_in(d_comm%domain_in%x(1)%domain_data%begin:d_comm%domain_in%x(1)%domain_data%end, &
-                            d_comm%domain_in%y(1)%domain_data%begin:d_comm%domain_in%y(1)%domain_data%end,d_comm%ke)
-      pointer( ptr_field_in, field_in)
-      MPP_TYPE_ :: field_out(d_comm%domain_out%x(1)%domain_data%begin:d_comm%domain_out%x(1)%domain_data%end, &
-                             d_comm%domain_out%y(1)%domain_data%begin:d_comm%domain_out%y(1)%domain_data%end,d_comm%ke)
-      pointer( ptr_field_out, field_out)
+      MPP_TYPE_, pointer :: field_in(:,:,:)
+      MPP_TYPE_, pointer :: field_out(:,:,:)
+      MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+      integer :: shape_in(3), shape_out(3)
       type(domain2D), pointer :: domain_in, domain_out
       integer :: i, j, k, l, n, l_size
       integer :: is, ie, js, je
@@ -38,6 +36,10 @@
       integer :: buffer_pos, errunit
 
 !fix ke
+      shape_in  = [d_comm%domain_in%x(1)%domain_data%end-d_comm%domain_in%x(1)%domain_data%begin+1, &
+                   d_comm%domain_in%y(1)%domain_data%end-d_comm%domain_in%y(1)%domain_data%begin+1, d_comm%ke]
+      shape_out = [d_comm%domain_out%x(1)%domain_data%end-d_comm%domain_out%x(1)%domain_data%begin+1, &
+                   d_comm%domain_out%y(1)%domain_data%end-d_comm%domain_out%y(1)%domain_data%begin+1, d_comm%ke]
       errunit = stderr()
       l_size = size(f_out(:))  ! equal to size(f_in(:))
       ke = d_comm%ke
@@ -65,7 +67,9 @@
          js=d_comm%sendjs(1,list); je=d_comm%sendje(1,list)
          pos = buffer_pos
          do l=1,l_size  ! loop over number of fields
-           ptr_field_in = f_in(l)
+           call c_f_pointer(f_in(l), tmpptr, shape=shape_in)
+           field_in(d_comm%domain_in%x(1)%domain_data%begin:d_comm%domain_in%x(1)%domain_data%end, &
+              d_comm%domain_in%y(1)%domain_data%begin:d_comm%domain_in%y(1)%domain_data%end, 1:d_comm%ke) => tmpptr
            do k = 1,ke
               do j = js,je
                  do i = is,ie
@@ -94,7 +98,9 @@
          if( debug )write( errunit,* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
          pos = buffer_pos
          do l=1,l_size  ! loop over number of in/out fields
-           ptr_field_out = f_out(l)
+           call c_f_pointer(f_out(l), tmpptr, shape=shape_out)
+           field_out(d_comm%domain_out%x(1)%domain_data%begin:d_comm%domain_out%x(1)%domain_data%end, &
+              d_comm%domain_out%y(1)%domain_data%begin:d_comm%domain_out%y(1)%domain_data%end, 1:d_comm%ke) => tmpptr
            do k = 1,ke
               do j = js,je
                  do i = is,ie
