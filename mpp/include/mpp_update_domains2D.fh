@@ -43,7 +43,6 @@
     subroutine MPP_UPDATE_DOMAINS_3D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
       use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
-      use mpp_mod, only: get_pointer_address
       MPP_TYPE_, target, contiguous, intent(inout) :: field(:,:,:)
       type(domain2D),   intent(inout)        :: domain
       integer,          intent(in), optional :: flags
