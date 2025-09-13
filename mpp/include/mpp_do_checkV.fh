@@ -25,7 +25,8 @@
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_V_(f_addrsx,f_addrsy, domain, check_x, check_y, &
                                    d_type, ke, flags, name)
-      integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      type(c_ptr),         intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
       type(domain2d),      intent(in)        :: domain
       type(overlapSpec),   intent(in)        :: check_x, check_y
       integer,             intent(in)        :: ke
@@ -33,18 +34,17 @@
       integer, intent(in),          optional :: flags
       character(len=*), intent(in), optional :: name
 
-      MPP_TYPE_ :: fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,ke)
-      MPP_TYPE_ :: fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,ke)
-      pointer(ptr_fieldx, fieldx)
-      pointer(ptr_fieldy, fieldy)
+      MPP_TYPE_, pointer :: fieldx(:,:,:), fieldy(:,:,:)
+      MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+      integer :: shapex(3), shapey(3)
+
       integer,    allocatable :: msg1(:), msg2(:)
       integer :: update_flags
       integer :: l_size, l, i, j, k, is, ie, js, je, n, m
       integer :: pos, nlist, msgsize
       integer :: to_pe, from_pe
       integer :: tMe
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer(ptr,buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos
       character(len=8) :: text
       character(len=64) :: field_name
@@ -53,6 +53,8 @@
       integer :: nsend_x, nsend_y, nrecv_x, nrecv_y
       integer :: outunit
 
+      shapex = [check_x%xend-check_x%xbegin+1, check_x%yend-check_x%ybegin+1, ke]
+      shapey = [check_y%xend-check_y%xbegin+1, check_y%yend-check_y%ybegin+1, ke]
       outunit = stdout()
       update_flags = XUPDATE+YUPDATE   !default
       if( PRESENT(flags) ) update_flags = flags
@@ -60,7 +62,7 @@
       buffer_pos = 0        !this initialization goes away if update_domains becomes non-blocking
       l_size = size(f_addrsx,1)
       nlist = size(domain%list(:))
-      ptr = LOC(mpp_domains_stack)
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
       !--- if debug_update_level is not NO_DEBUG, check the consistency on the bounds
       !--- (domain is symmetry or folded north edge). North bound will be checked when north edge is folded.
@@ -241,8 +243,10 @@
                select case( check_x%send(ind_x)%rotation(n) )
                case(ZERO)
                   do l = 1, l_size ! loop over number of fields
-                     ptr_fieldx = f_addrsx(l, tMe)
-                     ptr_fieldy = f_addrsy(l, tMe)
+                     call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                     fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                     call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                     fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                      do k = 1,ke
                         do j = js, je
                            do i = is, ie
@@ -255,8 +259,10 @@
                case(MINUS_NINETY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = is, ie
@@ -268,8 +274,10 @@
                      end do
                   else
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = is, ie
@@ -282,8 +290,10 @@
                   end if
                case(NINETY)
                   do l = 1, l_size ! loop over number of fields
-                     ptr_fieldx = f_addrsx(l, tMe)
-                     ptr_fieldy = f_addrsy(l, tMe)
+                     call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                     fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                     call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                     fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                      do k = 1, ke
                         do j = js, je
                            do i = ie, is, -1
@@ -296,8 +306,10 @@
                case(ONE_HUNDRED_EIGHTY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = ie, is, -1
@@ -309,8 +321,10 @@
                      end do
                   else
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = ie, is, -1
@@ -341,8 +355,10 @@
                select case( check_y%send(ind_y)%rotation(n) )
                case(ZERO)
                   do l = 1, l_size ! loop over number of fields
-                     ptr_fieldx = f_addrsx(l, tMe)
-                     ptr_fieldy = f_addrsy(l, tMe)
+                     call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                     fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                     call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                     fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                      do k = 1,ke
                         do j = js, je
                            do i = is, ie
@@ -354,8 +370,10 @@
                   end do
                case(MINUS_NINETY)
                   do l = 1, l_size ! loop over number of fields
-                     ptr_fieldx = f_addrsx(l, tMe)
-                     ptr_fieldy = f_addrsy(l, tMe)
+                     call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                     fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                     call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                     fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                      do k = 1, ke
                         do j = je, js, -1
                            do i = is, ie
@@ -368,8 +386,10 @@
                case(NINETY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = js, je
                               do i = ie, is, -1
@@ -381,8 +401,10 @@
                      end do
                   else
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = js, je
                               do i = ie, is, -1
@@ -396,8 +418,10 @@
                case(ONE_HUNDRED_EIGHTY)
                   if( BTEST(update_flags,SCALAR_BIT) ) then
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = ie, is, -1
@@ -409,8 +433,10 @@
                      end do
                   else
                      do l = 1, l_size ! loop over number of fields
-                        ptr_fieldx = f_addrsx(l, tMe)
-                        ptr_fieldy = f_addrsy(l, tMe)
+                        call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                        fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                        call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                        fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                         do k = 1, ke
                            do j = je, js, -1
                               do i = ie, is, -1
@@ -461,8 +487,10 @@
                buffer_pos = pos
                tMe = check_y%recv(ind_y)%tileMe(n)
                do l=1,l_size  ! loop over number of fields
-                  ptr_fieldx = f_addrsx(l, tMe)
-                  ptr_fieldy = f_addrsy(l, tMe)
+                  call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                  fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                  call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                  fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                   do k = 1,ke
                      do j = js, je
                         do i = is, ie
@@ -498,8 +526,10 @@
                buffer_pos = pos
                tMe = check_x%recv(ind_x)%tileMe(n)
                do l=1,l_size  ! loop over number of fields
-                  ptr_fieldx = f_addrsx(l, tMe)
-                  ptr_fieldy = f_addrsy(l, tMe)
+                  call c_f_pointer(f_addrsx(l,tMe), tmpptr, shape=shapex)
+                  fieldx(check_x%xbegin:check_x%xend, check_x%ybegin:check_x%yend,1:ke) => tmpptr(:,:,:)
+                  call c_f_pointer(f_addrsy(l,tMe), tmpptr, shape=shapey)
+                  fieldy(check_y%xbegin:check_y%xend, check_y%ybegin:check_y%yend,1:ke) => tmpptr(:,:,:)
                   do k = 1,ke
                      do j = js, je
                         do i = is, ie

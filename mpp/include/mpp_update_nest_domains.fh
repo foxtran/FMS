@@ -20,17 +20,17 @@
 !> @{
 subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
                                     nest_level, flags, complete, position, extra_halo, name, tile_count)
-      MPP_TYPE_,             intent(in)      :: field(:,:) !< field on the model grid
-      type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                            !! between fine and coarse grid.
-      MPP_TYPE_,             intent(inout)   :: wbuffer(:,:) !< west side buffer to be filled
-                                                             !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: ebuffer(:,:) !< east side buffer to be filled
-                                                             !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: sbuffer(:,:) !< south side buffer to be filled
-                                                             !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: nbuffer(:,:) !< north side buffer to be filled
-                                                             !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(in)    :: field(:,:)   !< field on the model grid
+      type(nest_domain_type),        intent(inout) :: nest_domain  !< Holds the information to pass data
+                                                                   !! between fine and coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: wbuffer(:,:) !< west side buffer to be filled
+                                                                   !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: ebuffer(:,:) !< east side buffer to be filled
+                                                                   !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: sbuffer(:,:) !< south side buffer to be filled
+                                                                   !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: nbuffer(:,:) !< north side buffer to be filled
+                                                                   !! with data on coarse grid.
       integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
       integer,          intent(in), optional :: flags !< Specify the direction of fine grid halo buffer to be filled.
                                                       !! Default value is XUPDATE+YUPDATE.
@@ -45,21 +45,18 @@ subroutine MPP_UPDATE_NEST_FINE_2D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                            !! default is 1 and currently only support tile_count = 1.
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
-      MPP_TYPE_ :: wbuffer3D(size(wbuffer,1),size(wbuffer,2),1)
-      MPP_TYPE_ :: ebuffer3D(size(ebuffer,1),size(ebuffer,2),1)
-      MPP_TYPE_ :: sbuffer3D(size(sbuffer,1),size(sbuffer,2),1)
-      MPP_TYPE_ :: nbuffer3D(size(nbuffer,1),size(nbuffer,2),1)
-      pointer( ptr, field3D )
-      pointer( ptr_w, wbuffer3D)
-      pointer( ptr_e, ebuffer3D)
-      pointer( ptr_s, sbuffer3D)
-      pointer( ptr_n, nbuffer3D)
-      ptr = LOC(field)
-      ptr_w = LOC(wbuffer)
-      ptr_e = LOC(ebuffer)
-      ptr_s = LOC(sbuffer)
-      ptr_n = LOC(nbuffer)
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+      MPP_TYPE_, pointer :: wbuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: ebuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: sbuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: nbuffer3D(:,:,:)
+
+      field3D(1:size(field,1),1:size(field,2),1:1) => field(:,:)
+      wbuffer3D(1:size(wbuffer,1),1:size(wbuffer,2),1:1) => wbuffer(:,:)
+      ebuffer3D(1:size(ebuffer,1),1:size(ebuffer,2),1:1) => ebuffer(:,:)
+      sbuffer3D(1:size(sbuffer,1),1:size(sbuffer,2),1:1) => sbuffer(:,:)
+      nbuffer3D(1:size(nbuffer,1),1:size(nbuffer,2),1:1) => nbuffer(:,:)
+
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
                                  nest_level, flags, complete, position, extra_halo, name, tile_count)
 
@@ -70,16 +67,17 @@ end subroutine MPP_UPDATE_NEST_FINE_2D_
 
 subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffer, nbuffer, &
                                     nest_level, flags, complete, position, extra_halo, name, tile_count)
-    MPP_TYPE_,             intent(in)      :: field(:,:,:) !< field on the model grid
+    use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+    MPP_TYPE_, target,     intent(in)      :: field(:,:,:) !< field on the model grid
     type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
                                                           !! between fine and coarse grid.
-    MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:) !< west side buffer to be filled
+    MPP_TYPE_, target,     intent(inout)   :: wbuffer(:,:,:) !< west side buffer to be filled
                                                              !! with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: ebuffer(:,:,:) !< east side buffer to be filled
+    MPP_TYPE_, target,     intent(inout)   :: ebuffer(:,:,:) !< east side buffer to be filled
                                                              !! with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: sbuffer(:,:,:) !< south side buffer to be filled
+    MPP_TYPE_, target,     intent(inout)   :: sbuffer(:,:,:) !< south side buffer to be filled
                                                              !! with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: nbuffer(:,:,:) !< north side buffer to be filled
+    MPP_TYPE_, target,     intent(inout)   :: nbuffer(:,:,:) !< north side buffer to be filled
                                                              !! with data on coarse grid.
     integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
     integer,          intent(in), optional :: flags !< Specify the direction of fine grid halo buffer to be filled.
@@ -97,11 +95,11 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
 
    MPP_TYPE_        :: d_type
    type(nestSpec), pointer :: update=>NULL()
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: f_addrs=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrs=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrs=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrs=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrs=-9999
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: f_addrs=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrs=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrs=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrs=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrs=c_null_ptr
    character(len=3) :: text
    logical          :: is_complete, set_mismatch
    integer          :: tile
@@ -138,11 +136,11 @@ subroutine MPP_UPDATE_NEST_FINE_3D_(field, nest_domain, wbuffer, sbuffer, ebuffe
       call mpp_error(FATAL,'MPP_UPDATE_NEST_FINE_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
    endif
 
-   f_addrs(list) = LOC(field)
-   wb_addrs(list) = LOC(wbuffer)
-   eb_addrs(list) = LOC(ebuffer)
-   sb_addrs(list) = LOC(sbuffer)
-   nb_addrs(list) = LOC(nbuffer)
+   f_addrs(list) = c_loc(field)
+   wb_addrs(list) = c_loc(wbuffer)
+   eb_addrs(list) = c_loc(ebuffer)
+   sb_addrs(list) = c_loc(sbuffer)
+   nb_addrs(list) = c_loc(nbuffer)
 
    wbuffersz = size(wbuffer); ebuffersz = size(ebuffer)
    sbuffersz = size(sbuffer); nbuffersz = size(nbuffer)
@@ -208,17 +206,17 @@ end subroutine MPP_UPDATE_NEST_FINE_3D_
 !###############################################################################
 subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffer, nbuffer, &
                                     nest_level, flags, complete, position, extra_halo, name, tile_count)
-      MPP_TYPE_,             intent(in)      :: field(:,:,:,:) !< field on the model grid
-      type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                            !! between fine and coarse grid.
-      MPP_TYPE_,             intent(inout)   :: wbuffer(:,:,:,:) !< west side buffer to be filled
-                                                                 !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: ebuffer(:,:,:,:) !< east side buffer to be filled
-                                                                 !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: sbuffer(:,:,:,:) !< south side buffer to be filled
-                                                                 !! with data on coarse grid.
-      MPP_TYPE_,             intent(inout)   :: nbuffer(:,:,:,:) !< north side buffer to be filled
-                                                                 !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(in)    :: field(:,:,:,:) !< field on the model grid
+      type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                                  !! between fine and coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: wbuffer(:,:,:,:) !< west side buffer to be filled
+                                                                       !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: ebuffer(:,:,:,:) !< east side buffer to be filled
+                                                                       !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: sbuffer(:,:,:,:) !< south side buffer to be filled
+                                                                       !! with data on coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: nbuffer(:,:,:,:) !< north side buffer to be filled
+                                                                       !! with data on coarse grid.
       integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
       integer,          intent(in), optional :: flags  !< Specify the direction of fine grid halo buffer to be filled.
                                                     !! Default value is XUPDATE+YUPDATE.
@@ -233,22 +231,18 @@ subroutine MPP_UPDATE_NEST_FINE_4D_(field, nest_domain, wbuffer, ebuffer, sbuffe
       integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                            !! default is 1 and currently only support tile_count = 1.
 
-      MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
-      MPP_TYPE_ :: wbuffer3D(size(wbuffer,1),size(wbuffer,2),size(wbuffer,3)*size(wbuffer,4))
-      MPP_TYPE_ :: ebuffer3D(size(ebuffer,1),size(ebuffer,2),size(ebuffer,3)*size(ebuffer,4))
-      MPP_TYPE_ :: sbuffer3D(size(sbuffer,1),size(sbuffer,2),size(sbuffer,3)*size(sbuffer,4))
-      MPP_TYPE_ :: nbuffer3D(size(nbuffer,1),size(nbuffer,2),size(nbuffer,3)*size(nbuffer,4))
+      MPP_TYPE_, pointer :: field3D(:,:,:)
+      MPP_TYPE_, pointer :: wbuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: ebuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: sbuffer3D(:,:,:)
+      MPP_TYPE_, pointer :: nbuffer3D(:,:,:)
 
-      pointer( ptr, field3D )
-      pointer( ptr_w, wbuffer3D)
-      pointer( ptr_e, ebuffer3D)
-      pointer( ptr_s, sbuffer3D)
-      pointer( ptr_n, nbuffer3D)
-      ptr = LOC(field)
-      ptr_w = LOC(wbuffer)
-      ptr_e = LOC(ebuffer)
-      ptr_s = LOC(sbuffer)
-      ptr_n = LOC(nbuffer)
+      field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)) => field(:,:,:,:)
+      wbuffer3D(1:size(wbuffer,1),1:size(wbuffer,2),1:size(wbuffer,3)*size(wbuffer,4)) => wbuffer(:,:,:,:)
+      ebuffer3D(1:size(ebuffer,1),1:size(ebuffer,2),1:size(ebuffer,3)*size(ebuffer,4)) => ebuffer(:,:,:,:)
+      sbuffer3D(1:size(sbuffer,1),1:size(sbuffer,2),1:size(sbuffer,3)*size(sbuffer,4)) => sbuffer(:,:,:,:)
+      nbuffer3D(1:size(nbuffer,1),1:size(nbuffer,2),1:size(nbuffer,3)*size(nbuffer,4)) => nbuffer(:,:,:,:)
+
       call mpp_update_nest_fine( field3D, nest_domain, wbuffer3D, ebuffer3D, sbuffer3D, nbuffer3D, &
                                  nest_level, flags, complete, position, extra_halo, name, tile_count)
 
@@ -261,17 +255,18 @@ end subroutine MPP_UPDATE_NEST_FINE_4D_
 subroutine MPP_UPDATE_NEST_FINE_2D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
                                       flags, gridtype, complete, extra_halo, name, tile_count)
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:), fieldy(:,:) !< field x and y components on the model grid
-    type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                          !! between fine and coarse grid.
-    MPP_TYPE_,             intent(inout)   :: wbufferx(:,:), wbuffery(:,:) !< west side buffer x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: ebufferx(:,:), ebuffery(:,:) !< east side buffer x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: sbufferx(:,:), sbuffery(:,:) !< south side buffer x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: nbufferx(:,:), nbuffery(:,:) !< north side buffer x and y  components
-                                                                 !! to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(in)    :: fieldx(:,:), fieldy(:,:) !< field x and y components
+                                                                             !! on the model grid
+    type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                                !! between fine and coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: wbufferx(:,:), wbuffery(:,:) !< west side buffer x and y components
+                                                                !! to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: ebufferx(:,:), ebuffery(:,:) !< east side buffer x and y components
+                                                                !! to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: sbufferx(:,:), sbuffery(:,:) !< south side buffer x and y components
+                                                                !! to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: nbufferx(:,:), nbuffery(:,:) !< north side buffer x and y components
+                                                                !! to be filled with data on coarse grid.
     integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
     integer,          intent(in), optional :: flags !< Specify the direction of fine grid halo buffer to be filled.
                                                     !! Default value is XUPDATE+YUPDATE.
@@ -285,37 +280,27 @@ subroutine MPP_UPDATE_NEST_FINE_2D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
     integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                          !! default is 1 and currently only support tile_count = 1.
 
-    MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),1)
-    MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),1)
-    MPP_TYPE_ :: wbuffer3Dx(size(wbufferx,1),size(wbufferx,2),1)
-    MPP_TYPE_ :: ebuffer3Dx(size(ebufferx,1),size(ebufferx,2),1)
-    MPP_TYPE_ :: sbuffer3Dx(size(sbufferx,1),size(sbufferx,2),1)
-    MPP_TYPE_ :: nbuffer3Dx(size(nbufferx,1),size(nbufferx,2),1)
-    MPP_TYPE_ :: wbuffer3Dy(size(wbuffery,1),size(wbuffery,2),1)
-    MPP_TYPE_ :: ebuffer3Dy(size(ebuffery,1),size(ebuffery,2),1)
-    MPP_TYPE_ :: sbuffer3Dy(size(sbuffery,1),size(sbuffery,2),1)
-    MPP_TYPE_ :: nbuffer3Dy(size(nbuffery,1),size(nbuffery,2),1)
-    pointer( ptrx, field3Dx )
-    pointer( ptry, field3Dy )
-    pointer( ptr_wx, wbuffer3Dx)
-    pointer( ptr_ex, ebuffer3Dx)
-    pointer( ptr_sx, sbuffer3Dx)
-    pointer( ptr_nx, nbuffer3Dx)
-    pointer( ptr_wy, wbuffer3Dy)
-    pointer( ptr_ey, ebuffer3Dy)
-    pointer( ptr_sy, sbuffer3Dy)
-    pointer( ptr_ny, nbuffer3Dy)
+    MPP_TYPE_, pointer :: field3Dx(:,:,:)
+    MPP_TYPE_, pointer :: field3Dy(:,:,:)
+    MPP_TYPE_, pointer :: wbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: ebuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: sbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: nbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: wbuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: ebuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: sbuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: nbuffer3Dy(:,:,:)
 
-    ptrx = LOC(fieldx)
-    ptry = LOC(fieldy)
-    ptr_wx = LOC(wbufferx)
-    ptr_ex = LOC(ebufferx)
-    ptr_sx = LOC(sbufferx)
-    ptr_nx = LOC(nbufferx)
-    ptr_wy = LOC(wbuffery)
-    ptr_ey = LOC(ebuffery)
-    ptr_sy = LOC(sbuffery)
-    ptr_ny = LOC(nbuffery)
+    field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:1) => fieldx(:,:)
+    field3Dy(1:size(fieldy,1),1:size(fieldy,2),1:1) => fieldy(:,:)
+    wbuffer3Dx(1:size(wbufferx,1),1:size(wbufferx,2),1:1) => wbufferx(:,:)
+    ebuffer3Dx(1:size(ebufferx,1),1:size(ebufferx,2),1:1) => ebufferx(:,:)
+    sbuffer3Dx(1:size(sbufferx,1),1:size(sbufferx,2),1:1) => sbufferx(:,:)
+    nbuffer3Dx(1:size(nbufferx,1),1:size(nbufferx,2),1:1) => nbufferx(:,:)
+    wbuffer3Dy(1:size(wbuffery,1),1:size(wbuffery,2),1:1) => wbuffery(:,:)
+    ebuffer3Dy(1:size(ebuffery,1),1:size(ebuffery,2),1:1) => ebuffery(:,:)
+    sbuffer3Dy(1:size(sbuffery,1),1:size(sbuffery,2),1:1) => sbuffery(:,:)
+    nbuffer3Dy(1:size(nbuffery,1),1:size(nbuffery,2),1:1) => nbuffery(:,:)
 
     call MPP_UPDATE_NEST_FINE_3D_V_(field3Dx, field3Dy, nest_domain, wbuffer3Dx, wbuffer3Dy, sbuffer3Dx, sbuffer3Dy, &
                                     ebuffer3Dx, ebuffer3Dy, nbuffer3Dx, nbuffer3Dy, nest_level, &
@@ -326,17 +311,18 @@ end subroutine MPP_UPDATE_NEST_FINE_2D_V_
 subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
                                       flags, gridtype, complete, extra_halo, name, tile_count)
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:), fieldy(:,:,:) !< field x and y components
+    use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+    MPP_TYPE_, target,     intent(in)      :: fieldx(:,:,:), fieldy(:,:,:) !< field x and y components
                                                                            !! on the model grid
     type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
                                                           !! between fine and coarse grid.
-    MPP_TYPE_,             intent(inout)   :: wbufferx(:,:,:), wbuffery(:,:,:) !< west side buffer x and y  components
+    MPP_TYPE_, target,     intent(inout)   :: wbufferx(:,:,:), wbuffery(:,:,:) !< west side buffer x and y  components
                                                                  !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: ebufferx(:,:,:), ebuffery(:,:,:) !< east side buffer x and y  components
+    MPP_TYPE_, target,     intent(inout)   :: ebufferx(:,:,:), ebuffery(:,:,:) !< east side buffer x and y  components
                                                                  !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: sbufferx(:,:,:), sbuffery(:,:,:) !< south side buffer x and y  components
+    MPP_TYPE_, target,     intent(inout)   :: sbufferx(:,:,:), sbuffery(:,:,:) !< south side buffer x and y  components
                                                                  !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: nbufferx(:,:,:), nbuffery(:,:,:) !< north side buffer x and y  components
+    MPP_TYPE_, target,     intent(inout)   :: nbufferx(:,:,:), nbuffery(:,:,:) !< north side buffer x and y  components
                                                                  !! to be filled with data on coarse grid.
     integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
     integer,          intent(in), optional :: flags !< Specify the direction of fine grid halo buffer to be filled.
@@ -354,16 +340,16 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
    MPP_TYPE_        :: d_type
    type(nestSpec), pointer :: updatex=>NULL()
    type(nestSpec), pointer :: updatey=>NULL()
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: f_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: f_addrsy=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrsy=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrsy=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrsy=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrsy=-9999
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: f_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: f_addrsy=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: wb_addrsy=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: eb_addrsy=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: sb_addrsy=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: nb_addrsy=c_null_ptr
 
    character(len=3) :: text
    logical          :: is_complete, set_mismatch
@@ -426,8 +412,8 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
    ksize = size(fieldx,3)
 
    if(nest_domain%nest(nest_level)%is_coarse_pe) then
-      f_addrsx(list) = LOC(fieldx)
-      f_addrsy(list) = LOC(fieldy)
+      f_addrsx(list) = c_loc(fieldx)
+      f_addrsy(list) = c_loc(fieldy)
       isizex=size(fieldx,1); jsizex=size(fieldx,2)
       isizey=size(fieldy,1); jsizey=size(fieldy,2)
       if(size(fieldx,3) .NE. size(fieldy,3)) call mpp_error(FATAL, &
@@ -435,14 +421,14 @@ subroutine MPP_UPDATE_NEST_FINE_3D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
    endif
 
    if(nest_domain%nest(nest_level)%is_fine_pe) then
-      wb_addrsx(list) = LOC(wbufferx)
-      eb_addrsx(list) = LOC(ebufferx)
-      sb_addrsx(list) = LOC(sbufferx)
-      nb_addrsx(list) = LOC(nbufferx)
-      wb_addrsy(list) = LOC(wbuffery)
-      eb_addrsy(list) = LOC(ebuffery)
-      sb_addrsy(list) = LOC(sbuffery)
-      nb_addrsy(list) = LOC(nbuffery)
+      wb_addrsx(list) = c_loc(wbufferx)
+      eb_addrsx(list) = c_loc(ebufferx)
+      sb_addrsx(list) = c_loc(sbufferx)
+      nb_addrsx(list) = c_loc(nbufferx)
+      wb_addrsy(list) = c_loc(wbuffery)
+      eb_addrsy(list) = c_loc(ebuffery)
+      sb_addrsy(list) = c_loc(sbuffery)
+      nb_addrsy(list) = c_loc(nbuffery)
 
       wbufferszx = size(wbufferx); ebufferszx = size(ebufferx)
       sbufferszx = size(sbufferx); nbufferszx = size(nbufferx)
@@ -555,21 +541,17 @@ end subroutine MPP_UPDATE_NEST_FINE_3D_V_
 subroutine MPP_UPDATE_NEST_FINE_4D_V_(fieldx, fieldy, nest_domain, wbufferx, wbuffery, sbufferx, sbuffery, &
                                       ebufferx, ebuffery, nbufferx, nbuffery, nest_level, &
                                       flags, gridtype, complete, extra_halo, name, tile_count)
-    MPP_TYPE_,             intent(in)      :: fieldx(:,:,:,:), fieldy(:,:,:,:) !< field x and y
+    MPP_TYPE_, target, contiguous, intent(in)    :: fieldx(:,:,:,:), fieldy(:,:,:,:) !< field x and y
                                                                      !! components on the model grid
-    type(nest_domain_type), intent(inout)  :: nest_domain
-    MPP_TYPE_,             intent(inout)   :: wbufferx(:,:,:,:), wbuffery(:,:,:,:) !< west side buffer
-                                                                                   !! x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: ebufferx(:,:,:,:), ebuffery(:,:,:,:) !< east side buffer
-                                                                                   !! x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: sbufferx(:,:,:,:), sbuffery(:,:,:,:) !< south side buffer
-                                                                                   !! x and y  components
-                                                                 !! to be filled with data on coarse grid.
-    MPP_TYPE_,             intent(inout)   :: nbufferx(:,:,:,:), nbuffery(:,:,:,:) !< north side buffer
-                                                                                   !! x and y  components
-                                                                 !! to be filled with data on coarse grid.
+    type(nest_domain_type),        intent(inout) :: nest_domain
+    MPP_TYPE_, target, contiguous, intent(inout) :: wbufferx(:,:,:,:), wbuffery(:,:,:,:) !< west side buffer
+                                                        !! x and y  components to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: ebufferx(:,:,:,:), ebuffery(:,:,:,:) !< east side buffer
+                                                        !! x and y  components to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: sbufferx(:,:,:,:), sbuffery(:,:,:,:) !< south side buffer
+                                                        !! x and y  components to be filled with data on coarse grid.
+    MPP_TYPE_, target, contiguous, intent(inout) :: nbufferx(:,:,:,:), nbuffery(:,:,:,:) !< north side buffer
+                                                        !! x and y  components to be filled with data on coarse grid.
     integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
     integer,          intent(in), optional :: flags !< Specify the direction of fine grid halo buffer to be filled.
                                                     !! Default value is XUPDATE+YUPDATE.
@@ -583,36 +565,27 @@ subroutine MPP_UPDATE_NEST_FINE_4D_V_(fieldx, fieldy, nest_domain, wbufferx, wbu
     integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                          !! default is 1 and currently only support tile_count = 1.
 
-    MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4))
-    MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4))
-    MPP_TYPE_ :: wbuffer3Dx(size(wbufferx,1),size(wbufferx,2),size(wbufferx,3)*size(wbufferx,4))
-    MPP_TYPE_ :: ebuffer3Dx(size(ebufferx,1),size(ebufferx,2),size(ebufferx,3)*size(ebufferx,4))
-    MPP_TYPE_ :: sbuffer3Dx(size(sbufferx,1),size(sbufferx,2),size(sbufferx,3)*size(sbufferx,4))
-    MPP_TYPE_ :: nbuffer3Dx(size(nbufferx,1),size(nbufferx,2),size(nbufferx,3)*size(nbufferx,4))
-    MPP_TYPE_ :: wbuffer3Dy(size(wbuffery,1),size(wbuffery,2),size(wbuffery,3)*size(wbuffery,4))
-    MPP_TYPE_ :: ebuffer3Dy(size(ebuffery,1),size(ebuffery,2),size(ebuffery,3)*size(ebuffery,4))
-    MPP_TYPE_ :: sbuffer3Dy(size(sbuffery,1),size(sbuffery,2),size(sbuffery,3)*size(sbuffery,4))
-    MPP_TYPE_ :: nbuffer3Dy(size(nbuffery,1),size(nbuffery,2),size(nbuffery,3)*size(nbuffery,4))
-    pointer( ptrx, field3Dx )
-    pointer( ptry, field3Dy )
-    pointer( ptr_wx, wbuffer3Dx)
-    pointer( ptr_ex, ebuffer3Dx)
-    pointer( ptr_sx, sbuffer3Dx)
-    pointer( ptr_nx, nbuffer3Dx)
-    pointer( ptr_wy, wbuffer3Dy)
-    pointer( ptr_ey, ebuffer3Dy)
-    pointer( ptr_sy, sbuffer3Dy)
-    pointer( ptr_ny, nbuffer3Dy)
-    ptrx = LOC(fieldx)
-    ptry = LOC(fieldy)
-    ptr_wx = LOC(wbufferx)
-    ptr_ex = LOC(ebufferx)
-    ptr_sx = LOC(sbufferx)
-    ptr_nx = LOC(nbufferx)
-    ptr_wy = LOC(wbuffery)
-    ptr_ey = LOC(ebuffery)
-    ptr_sy = LOC(sbuffery)
-    ptr_ny = LOC(nbuffery)
+    MPP_TYPE_, pointer :: field3Dx(:,:,:)
+    MPP_TYPE_, pointer :: field3Dy(:,:,:)
+    MPP_TYPE_, pointer :: wbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: ebuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: sbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: nbuffer3Dx(:,:,:)
+    MPP_TYPE_, pointer :: wbuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: ebuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: sbuffer3Dy(:,:,:)
+    MPP_TYPE_, pointer :: nbuffer3Dy(:,:,:)
+
+    field3Dx(1:size(fieldx,1),1:size(fieldx,2),1:size(fieldx,3)*size(fieldx,4)) => fieldx(:,:,:,:)
+    field3Dy(1:size(fieldy,1),1:size(fieldy,2),1:size(fieldy,3)*size(fieldy,4)) => fieldy(:,:,:,:)
+    wbuffer3Dx(1:size(wbufferx,1),1:size(wbufferx,2),1:size(wbufferx,3)*size(wbufferx,4)) => wbufferx(:,:,:,:)
+    ebuffer3Dx(1:size(ebufferx,1),1:size(ebufferx,2),1:size(ebufferx,3)*size(ebufferx,4)) => ebufferx(:,:,:,:)
+    sbuffer3Dx(1:size(sbufferx,1),1:size(sbufferx,2),1:size(sbufferx,3)*size(sbufferx,4)) => sbufferx(:,:,:,:)
+    nbuffer3Dx(1:size(nbufferx,1),1:size(nbufferx,2),1:size(nbufferx,3)*size(nbufferx,4)) => nbufferx(:,:,:,:)
+    wbuffer3Dy(1:size(wbuffery,1),1:size(wbuffery,2),1:size(wbuffery,3)*size(wbuffery,4)) => wbuffery(:,:,:,:)
+    ebuffer3Dy(1:size(ebuffery,1),1:size(ebuffery,2),1:size(ebuffery,3)*size(ebuffery,4)) => ebuffery(:,:,:,:)
+    sbuffer3Dy(1:size(sbuffery,1),1:size(sbuffery,2),1:size(sbuffery,3)*size(sbuffery,4)) => sbuffery(:,:,:,:)
+    nbuffer3Dy(1:size(nbuffery,1),1:size(nbuffery,2),1:size(nbuffery,3)*size(nbuffery,4)) => nbuffery(:,:,:,:)
 
     call MPP_UPDATE_NEST_FINE_3D_V_(field3Dx, field3Dy, nest_domain, wbuffer3Dx, wbuffer3Dy, sbuffer3Dx, sbuffer3Dy, &
                                     ebuffer3Dx, ebuffer3Dy, nbuffer3Dx, nbuffer3Dy, nest_level, &
@@ -624,10 +597,10 @@ end subroutine MPP_UPDATE_NEST_FINE_4D_V_
 
 subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_level, complete, position, name, &
                                      &  tile_count)
-      MPP_TYPE_,             intent(in)      :: field_in(:,:) !< field on the model grid
-      type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                            !! between fine and coarse grid.
-      MPP_TYPE_,             intent(inout)   :: field_out(:,:) !< field_out to be filled with data on coarse grid
+      MPP_TYPE_, target, contiguous, intent(in)    :: field_in(:,:) !< field on the model grid
+      type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                                  !! between fine and coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: field_out(:,:) !< field_out to be filled with data on coarse grid
       integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
       logical,          intent(in), optional :: complete !< When .true., do the buffer filling.
                                                          !! Default value is .true.
@@ -637,12 +610,12 @@ subroutine MPP_UPDATE_NEST_COARSE_2D_(field_in, nest_domain, field_out, nest_lev
       integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                            !! default is 1 and currently only support tile_count = 1.
 
-      MPP_TYPE_ :: field3D_in(size(field_in,1),size(field_in,2),1)
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1)
-      pointer( ptr_in, field3D_in )
-      pointer( ptr_out, field3D_out)
-      ptr_in = LOC(field_in)
-      ptr_out = LOC(field_out)
+      MPP_TYPE_, pointer :: field3D_in(:,:,:)
+      MPP_TYPE_, pointer :: field3D_out(:,:,:)
+
+      field3D_in(1:size(field_in,1),1:size(field_in,2),1:1) => field_in(:,:)
+      field3D_out(1:size(field_out,1),1:size(field_out,2),1:1) => field_out(:,:)
+
       call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, &
                                  &  tile_count)
 
@@ -656,10 +629,11 @@ end subroutine MPP_UPDATE_NEST_COARSE_2D_
 !--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
 subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_level, complete, position, name, &
                                      &  tile_count)
-   MPP_TYPE_,             intent(in)      :: field_in(:,:,:) !< field on the model grid
+   use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+   MPP_TYPE_, target,     intent(in)      :: field_in(:,:,:) !< field on the model grid
    type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
                                                             !! between fine and coarse grid.
-   MPP_TYPE_,             intent(inout)   :: field_out(:,:,:) !< field_out to be filled with data on coarse grid
+   MPP_TYPE_, target,     intent(inout)   :: field_out(:,:,:) !< field_out to be filled with data on coarse grid
    integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
    logical,          intent(in), optional :: complete !< When .true., do the buffer filling. Default value is .true.
    integer,          intent(in), optional :: position !< Cell position. Its value should be CENTER, EAST, CORNER,
@@ -670,8 +644,8 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_lev
 
    MPP_TYPE_        :: d_type
    type(nestSpec), pointer :: update=>NULL()
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrs=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrs=-9999
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrs=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrs=c_null_ptr
    character(len=3) :: text
    logical          :: is_complete, set_mismatch
    integer          :: tile
@@ -706,12 +680,12 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_(field_in, nest_domain, field_out, nest_lev
    isize_out = 0; jsize_out = 0
 
    if(nest_domain%nest(nest_level)%is_fine_pe) then
-      fin_addrs(list) = LOC(field_in)
+      fin_addrs(list) = c_loc(field_in)
       isize_in=size(field_in,1); jsize_in=size(field_in,2)
       ksize = size(field_in,3)
    endif
    if(nest_domain%nest(nest_level)%is_coarse_pe) then
-      fout_addrs(list) = LOC(field_out)
+      fout_addrs(list) = c_loc(field_out)
       isize_out=size(field_out,1); jsize_out=size(field_out,2)
       ksize = size(field_out,3)
    endif
@@ -765,10 +739,11 @@ end subroutine MPP_UPDATE_NEST_COARSE_3D_
 !###############################################################################
 subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, nest_level, complete, position, name, &
                                      &  tile_count)
-      MPP_TYPE_,             intent(in)      :: field_in(:,:,:,:) !< field on the model grid
-      type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                            !! between fine and coarse grid.
-      MPP_TYPE_,             intent(inout)   :: field_out(:,:,:,:) !< field_out to be filled with data on coarse grid
+      MPP_TYPE_, target, contiguous, intent(in)    :: field_in(:,:,:,:) !< field on the model grid
+      type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                                  !! between fine and coarse grid.
+      MPP_TYPE_, target, contiguous, intent(inout) :: field_out(:,:,:,:) !< field_out to be filled with data
+                                                                         !! on coarse grid
       integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
       logical,          intent(in), optional :: complete !< When .true., do the buffer filling. Default value is .true.
       integer,          intent(in), optional :: position !< Cell position. Its value should be CENTER, EAST, CORNER,
@@ -777,12 +752,12 @@ subroutine MPP_UPDATE_NEST_COARSE_4D_(field_in, nest_domain, field_out, nest_lev
       integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                            !! default is 1 and currently only support tile_count = 1.
 
-      MPP_TYPE_ :: field3D_in(size(field_in,1),size(field_in,2),size(field_in,3)*size(field_in,4))
-      MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),size(field_out,3)*size(field_out,4))
-      pointer( ptr_in, field3D_in )
-      pointer( ptr_out, field3D_out )
-      ptr_in = LOC(field_in)
-      ptr_out = LOC(field_out)
+      MPP_TYPE_, pointer :: field3D_in(:,:,:)
+      MPP_TYPE_, pointer :: field3D_out(:,:,:)
+
+      field3D_in(1:size(field_in,1),1:size(field_in,2),1:size(field_in,3)*size(field_in,4)) => field_in(:,:,:,:)
+      field3D_out(1:size(field_out,1),1:size(field_out,2),1:size(field_out,3)*size(field_out,4)) => field_out(:,:,:,:)
+
       call mpp_update_nest_coarse( field3D_in, nest_domain, field3D_out, nest_level, complete, position, name, &
                                  &  tile_count)
 
@@ -797,36 +772,32 @@ end subroutine MPP_UPDATE_NEST_COARSE_4D_
 !--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
 subroutine MPP_UPDATE_NEST_COARSE_2D_V_(fieldx_in, fieldy_in, nest_domain, fieldx_out, fieldy_out, nest_level, &
                                         flags, gridtype, complete, name, tile_count)
-   MPP_TYPE_,             intent(in)      :: fieldx_in(:,:) !< x component of field on the model grid
-   MPP_TYPE_,             intent(in)      :: fieldy_in(:,:) !< y component of field on the model grid
-   type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                         !! between fine and coarse grid.
+   MPP_TYPE_, target, contiguous, intent(in)    :: fieldx_in(:,:) !< x component of field on the model grid
+   MPP_TYPE_, target, contiguous, intent(in)    :: fieldy_in(:,:) !< y component of field on the model grid
+   type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                               !! between fine and coarse grid.
    integer,          intent(in), optional :: flags, gridtype !< Specify the direction of fine grid halo
                                                              !! buffer to be filled.
-                                                    !! Default value is XUPDATE+YUPDATE.
-   MPP_TYPE_,             intent(inout)   :: fieldx_out(:,:) !< x component of field_out to be
-                                                             !! filled with data on coarse grid
-   MPP_TYPE_,             intent(inout)   :: fieldy_out(:,:) !< y component of field_out to be
-                                                             !! filled with data on coarse grid
+                                                             !! Default value is XUPDATE+YUPDATE.
+   MPP_TYPE_, target, contiguous, intent(inout) :: fieldx_out(:,:) !< x component of field_out to be
+                                                                   !! filled with data on coarse grid
+   MPP_TYPE_, target, contiguous, intent(inout) :: fieldy_out(:,:) !< y component of field_out to be
+                                                                   !! filled with data on coarse grid
    integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
    logical,          intent(in), optional :: complete !< When .true., do the buffer filling.
    character(len=*), intent(in), optional :: name !< Name of the nest domain optional argument
    integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                         !! default is 1 and currently only support tile_count = 1.
 
-   MPP_TYPE_ :: field3Dx_in(size(fieldx_in,1),size(fieldx_in,2),1)
-   MPP_TYPE_ :: field3Dy_in(size(fieldy_in,1),size(fieldy_in,2),1)
-   MPP_TYPE_ :: field3Dx_out(size(fieldx_out,1),size(fieldx_out,2),1)
-   MPP_TYPE_ :: field3Dy_out(size(fieldy_out,1),size(fieldy_out,2),1)
-   pointer( ptrx_in, field3Dx_in )
-   pointer( ptry_in, field3Dy_in )
-   pointer( ptrx_out, field3Dx_out )
-   pointer( ptry_out, field3Dy_out )
+   MPP_TYPE_, pointer :: field3Dx_in(:,:,:)
+   MPP_TYPE_, pointer :: field3Dy_in(:,:,:)
+   MPP_TYPE_, pointer :: field3Dx_out(:,:,:)
+   MPP_TYPE_, pointer :: field3Dy_out(:,:,:)
 
-   ptrx_in = LOC(fieldx_in)
-   ptry_in = LOC(fieldy_in)
-   ptrx_out = LOC(fieldx_out)
-   ptry_out = LOC(fieldy_out)
+   field3Dx_in(1:size(fieldx_in,1),1:size(fieldx_in,2),1:1) => fieldx_in(:,:)
+   field3Dy_in(1:size(fieldy_in,1),1:size(fieldy_in,2),1:1) => fieldy_in(:,:)
+   field3Dx_out(1:size(fieldx_out,1),1:size(fieldx_out,2),1:1) => fieldx_out(:,:)
+   field3Dy_out(1:size(fieldy_out,1),1:size(fieldy_out,2),1:1) => fieldy_out(:,:)
 
    call MPP_UPDATE_NEST_COARSE_3D_V_(field3Dx_in, field3Dy_in, nest_domain, field3Dx_out, field3Dy_out, &
                                      nest_level, flags, gridtype, complete, name, tile_count)
@@ -838,16 +809,17 @@ end subroutine MPP_UPDATE_NEST_COARSE_2D_V_
 !--- field_in and field_out are all on the coarse grid. field_in is remapped from fine grid to coarse grid.
 subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, fieldx_out, fieldy_out, nest_level, &
                                         flags, gridtype, complete, name, tile_count)
-   MPP_TYPE_,             intent(in)      :: fieldx_in(:,:,:) !< x component field on the model grid
-   MPP_TYPE_,             intent(in)      :: fieldy_in(:,:,:) !< y component of field on the model grid
+   use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+   MPP_TYPE_, target,     intent(in)      :: fieldx_in(:,:,:) !< x component field on the model grid
+   MPP_TYPE_, target,     intent(in)      :: fieldy_in(:,:,:) !< y component of field on the model grid
    type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
                                                          !! between fine and coarse grid.
    integer,          intent(in), optional :: flags, gridtype !< Specify the direction of fine grid halo
                                                              !! buffer to be filled.
                                                     !! Default value is XUPDATE+YUPDATE.
-   MPP_TYPE_,             intent(inout)   :: fieldx_out(:,:,:) !< x component of field_out to be
+   MPP_TYPE_, target,     intent(inout)   :: fieldx_out(:,:,:) !< x component of field_out to be
                                                                !! filled with data on coarse grid
-   MPP_TYPE_,             intent(inout)   :: fieldy_out(:,:,:) !< y component of field_out to be
+   MPP_TYPE_, target,     intent(inout)   :: fieldy_out(:,:,:) !< y component of field_out to be
                                                                !! filled with data on coarse grid
    integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
    logical,          intent(in), optional :: complete !< When .true., do the buffer filling.
@@ -858,10 +830,10 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
    MPP_TYPE_        :: d_type
    type(nestSpec), pointer :: updatex=>NULL()
    type(nestSpec), pointer :: updatey=>NULL()
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrsy=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrsx=-9999
-   integer(i8_kind),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrsy=-9999
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fin_addrsy=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrsx=c_null_ptr
+   type(c_ptr),dimension(MAX_DOMAIN_FIELDS),save :: fout_addrsy=c_null_ptr
    character(len=3) :: text
    logical          :: is_complete, set_mismatch
    integer          :: tile
@@ -917,8 +889,8 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
    ksize = 0
 
    if(nest_domain%nest(nest_level)%is_fine_pe) then
-      fin_addrsx(list) = LOC(fieldx_in)
-      fin_addrsy(list) = LOC(fieldy_in)
+      fin_addrsx(list) = c_loc(fieldx_in)
+      fin_addrsy(list) = c_loc(fieldy_in)
       isizex_in=size(fieldx_in,1); jsizex_in=size(fieldx_in,2)
       isizey_in=size(fieldy_in,1); jsizey_in=size(fieldy_in,2)
       ksize = size(fieldx_in,3)
@@ -926,8 +898,8 @@ subroutine MPP_UPDATE_NEST_COARSE_3D_V_(fieldx_in, fieldy_in, nest_domain, field
            'MPP_UPDATE_NEST_COARSE_3D_V: size(fieldx_in,3) .NE. size(fieldy_in,3)')
    endif
    if(nest_domain%nest(nest_level)%is_coarse_pe) then
-      fout_addrsx(list) = LOC(fieldx_out)
-      fout_addrsy(list) = LOC(fieldy_out)
+      fout_addrsx(list) = c_loc(fieldx_out)
+      fout_addrsy(list) = c_loc(fieldy_out)
       isizex_out=size(fieldx_out,1); jsizex_out=size(fieldx_out,2)
       isizey_out=size(fieldy_out,1); jsizey_out=size(fieldy_out,2)
       ksize = size(fieldx_out,3)
@@ -1023,36 +995,34 @@ end subroutine MPP_UPDATE_NEST_COARSE_3D_V_
 
 subroutine MPP_UPDATE_NEST_COARSE_4D_V_(fieldx_in, fieldy_in, nest_domain, fieldx_out, fieldy_out, nest_level, &
                                         flags, gridtype, complete, name, tile_count)
-   MPP_TYPE_,             intent(in)      :: fieldx_in(:,:,:,:) !< x component field on the model grid
-   MPP_TYPE_,             intent(in)      :: fieldy_in(:,:,:,:) !< y component field on the model grid
-   type(nest_domain_type), intent(inout)  :: nest_domain !< Holds the information to pass data
-                                                         !! between fine and coarse grid.
+   MPP_TYPE_, target, contiguous, intent(in)    :: fieldx_in(:,:,:,:) !< x component field on the model grid
+   MPP_TYPE_, target, contiguous, intent(in)    :: fieldy_in(:,:,:,:) !< y component field on the model grid
+   type(nest_domain_type),        intent(inout) :: nest_domain !< Holds the information to pass data
+                                                               !! between fine and coarse grid.
    integer,          intent(in), optional :: flags, gridtype !< Specify the direction of fine grid halo
                                                              !! buffer to be filled.
                                                     !! Default value is XUPDATE+YUPDATE.
-   MPP_TYPE_,             intent(inout)   :: fieldx_out(:,:,:,:) !< x component of field_out to be
-                                                                 !! filled with data on coarse grid
-   MPP_TYPE_,             intent(inout)   :: fieldy_out(:,:,:,:) !< y component of field_out to be
-                                                                 !! filled with data on coarse grid
+   MPP_TYPE_, target, contiguous, intent(inout) :: fieldx_out(:,:,:,:) !< x component of field_out to be
+                                                                       !! filled with data on coarse grid
+   MPP_TYPE_, target, contiguous, intent(inout) :: fieldy_out(:,:,:,:) !< y component of field_out to be
+                                                                       !! filled with data on coarse grid
    integer,          intent(in)           :: nest_level !< level of the nest (> 1 implies a telescoping nest)
    logical,          intent(in), optional :: complete !< When .true., do the buffer filling.
    character(len=*), intent(in), optional :: name !< Name of the nest domain optional argument
    integer,          intent(in), optional :: tile_count !< Used to support multiple-tile-per-pe.
                                                         !! default is 1 and currently only support tile_count = 1.
 
-   MPP_TYPE_ :: field3Dx_in(size(fieldx_in,1),size(fieldx_in,2),size(fieldx_in,3)*size(fieldx_in,4))
-   MPP_TYPE_ :: field3Dy_in(size(fieldy_in,1),size(fieldy_in,2),size(fieldy_in,3)*size(fieldy_in,4))
-   MPP_TYPE_ :: field3Dx_out(size(fieldx_out,1),size(fieldx_out,2),size(fieldx_out,3)*size(fieldx_out,4))
-   MPP_TYPE_ :: field3Dy_out(size(fieldy_out,1),size(fieldy_out,2),size(fieldy_out,3)*size(fieldy_out,4))
-   pointer( ptrx_in, field3Dx_in )
-   pointer( ptry_in, field3Dy_in )
-   pointer( ptrx_out, field3Dx_out )
-   pointer( ptry_out, field3Dy_out )
+   MPP_TYPE_, pointer :: field3Dx_in(:,:,:)
+   MPP_TYPE_, pointer :: field3Dy_in(:,:,:)
+   MPP_TYPE_, pointer :: field3Dx_out(:,:,:)
+   MPP_TYPE_, pointer :: field3Dy_out(:,:,:)
 
-   ptrx_in = LOC(fieldx_in)
-   ptry_in = LOC(fieldy_in)
-   ptrx_out = LOC(fieldx_out)
-   ptry_out = LOC(fieldy_out)
+   field3Dx_in(1:size(fieldx_in,1),1:size(fieldx_in,2),1:size(fieldx_in,3)*size(fieldx_in,4)) => fieldx_in(:,:,:,:)
+   field3Dy_in(1:size(fieldy_in,1),1:size(fieldy_in,2),1:size(fieldy_in,3)*size(fieldy_in,4)) => fieldy_in(:,:,:,:)
+   field3Dx_out(1:size(fieldx_out,1),1:size(fieldx_out,2),1:size(fieldx_out,3)*size(fieldx_out,4)) => &
+                                                                                                   fieldx_out(:,:,:,:)
+   field3Dy_out(1:size(fieldy_out,1),1:size(fieldy_out,2),1:size(fieldy_out,3)*size(fieldy_out,4)) => &
+                                                                                                   fieldy_out(:,:,:,:)
 
    call MPP_UPDATE_NEST_COARSE_3D_V_(field3Dx_in, field3Dy_in, nest_domain, field3Dx_out, field3Dy_out, &
                                      nest_level, flags, gridtype, complete, name, tile_count)

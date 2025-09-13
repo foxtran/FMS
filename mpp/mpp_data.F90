@@ -31,6 +31,7 @@ module mpp_data_mod
   use mpi
 #endif
 
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr
   use mpp_parameter_mod, only : MAXPES
   use platform_mod
 
@@ -47,8 +48,8 @@ module mpp_data_mod
 
   !--- All othere modules should import these parameters from mpp_domains_mod.
   !> public data which is used by mpp_domains_mod.
-  public :: mpp_domains_stack, ptr_domains_stack
-  public :: mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
+  public :: mpp_domains_stack, ptr_domains_stakc
+  public :: mpp_domains_stack_nonblock, ptr_domains_stakc_nonblock
 
   !-------------------------------------------------------------------------------!
   ! The following data included in the .inc file are diffrent for sma or mpi case !

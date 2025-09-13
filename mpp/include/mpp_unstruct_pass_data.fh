@@ -22,14 +22,13 @@
 !! First only implement for data at grid cell center.
 SUBROUTINE mpp_pass_SG_to_UG_2D_(UG_domain, field_SG, field_UG)
   type(domainUG), intent(in) :: UG_domain
-  MPP_TYPE_,          intent(inout) :: field_UG(:)
-  MPP_TYPE_,             intent(in) :: field_SG(:,:)
-  MPP_TYPE_ :: field3D_SG(size(field_SG,1),size(field_SG,2),1)
-  MPP_TYPE_ :: field2D_UG(size(field_UG(:)), 1)
-  pointer(ptr_SG, field3D_SG)
-  pointer(ptr_UG, field2D_UG)
-  ptr_SG = LOC(field_SG)
-  ptr_UG = LOC(field_UG)
+  MPP_TYPE_, target, contiguous, intent(inout) :: field_UG(:)
+  MPP_TYPE_, target, contiguous, intent(in)    :: field_SG(:,:)
+  MPP_TYPE_, pointer :: field3D_SG(:,:,:), field2D_UG(:,:)
+
+  field3D_SG(1:size(field_SG,1),1:size(field_SG,2),1:1) => field_SG
+  field2D_UG(1:size(field_UG(:)), 1:1) => field_UG
+
   call mpp_pass_SG_to_UG(UG_domain, field3D_SG, field2D_UG)
 
 end SUBROUTINE mpp_pass_SG_to_UG_2D_
@@ -125,14 +124,12 @@ end SUBROUTINE mpp_pass_SG_to_UG_3D_
 !! First only implement for data at grid cell center.
 SUBROUTINE mpp_pass_UG_to_SG_2D_(UG_domain, field_UG, field_SG)
   type(domainUG), intent(in) :: UG_domain
-  MPP_TYPE_,             intent(in) :: field_UG(:)
-  MPP_TYPE_,          intent(inout) :: field_SG(:,:)
-  MPP_TYPE_ :: field3D_SG(size(field_SG,1),size(field_SG,2),1)
-  MPP_TYPE_ :: field2D_UG(size(field_UG(:)), 1)
-  pointer(ptr_SG, field3D_SG)
-  pointer(ptr_UG, field2D_UG)
-  ptr_SG = LOC(field_SG)
-  ptr_UG = LOC(field_UG)
+  MPP_TYPE_, target, contiguous, intent(in)    :: field_UG(:)
+  MPP_TYPE_, target, contiguous, intent(inout) :: field_SG(:,:)
+  MPP_TYPE_, pointer :: field3D_SG(:,:,:), field2D_UG(:,:)
+
+  field3D_SG(1:size(field_SG,1),1:size(field_SG,2),1:1) => field_SG
+  field2D_UG(1:size(field_UG(:)), 1:1) => field_UG
 
   call mpp_pass_UG_to_SG(UG_domain, field2D_UG, field3D_SG)
 

@@ -19,18 +19,16 @@
 !> @{
     subroutine MPP_GLOBAL_FIELD_UG_2D_( domain, local, global, flags, default_data)
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:)
-      MPP_TYPE_, intent(out) :: global(:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),1)
-      MPP_TYPE_ :: global3D(size(global,1),1)
-      pointer( lptr,  local3D )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC( local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:1) => local(:)
+      global3D(1:size(global,1),1:1) => global(:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
 
     end subroutine MPP_GLOBAL_FIELD_UG_2D_
@@ -38,6 +36,7 @@
     subroutine MPP_GLOBAL_FIELD_UG_3D_( domain, local, global, flags, default_data)
 !get a global field from a local field
 !local field may be on compute OR data domain
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       type(domainUG), intent(in) :: domain
       MPP_TYPE_, intent(in)  ::  local(domain%compute%begin:,:)
       MPP_TYPE_, intent(out) :: global(domain%global%begin:,:)
@@ -48,13 +47,11 @@
       integer :: ke, lsc, lec, ls, le, num_word_me
       integer :: ipos, jpos
       logical :: root_only, global_on_this_pe
-      MPP_TYPE_ :: clocal (domain%compute%size*size(local,2))
-      MPP_TYPE_ :: cremote(domain%compute%max_size*size(local,2))
+      MPP_TYPE_, pointer :: clocal (:)
+      MPP_TYPE_, pointer :: cremote(:)
+      integer :: local_stack_size, remote_stack_size
       integer :: stackuse
       character(len=8) :: text
-
-      pointer( ptr_local,  clocal  )
-      pointer( ptr_remote, cremote )
 
       stackuse = size(clocal(:))+size(cremote(:))
       if( stackuse.GT.mpp_domains_stack_size )then
@@ -65,8 +62,10 @@
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
-      ptr_local  = LOC(mpp_domains_stack)
-      ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
+      local_stack_size  = domain%compute%size*size(local,2)
+      remote_stack_size = domain%compute%max_size*size(local,2)
+      call c_f_pointer(c_loc(mpp_domains_stack(1)),                  clocal,  [local_stack_size ])
+      call c_f_pointer(c_loc(mpp_domains_stack(local_stack_size+1)), cremote, [remote_stack_size])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD_UG: must first call mpp_domains_init.' )
 
@@ -170,35 +169,31 @@
 
    subroutine MPP_GLOBAL_FIELD_UG_4D_( domain, local, global, flags, default_data )
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:,:,:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2)*size( local,3))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2)*size( local,3)) => local(:,:,:)
+      global3D(1:size(global,1),1:size(global,2)*size(global,3)) => global(:,:,:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_4D_
 
     subroutine MPP_GLOBAL_FIELD_UG_5D_( domain, local, global, flags, default_data )
       type(domainUG), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  ::  local(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: global(:,:,:,:)
       integer, intent(in), optional :: flags
       MPP_TYPE_, intent(in), optional :: default_data
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2)*size( local,3)*size( local,4))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2)*size(global,3)*size(global,4))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
+      MPP_TYPE_, pointer :: local3D (:,:)
+      MPP_TYPE_, pointer :: global3D(:,:)
       global = 0
-      lptr = LOC(local)
-      gptr = LOC(global)
+      local3D (1:size( local,1),1:size( local,2)*size( local,3)*size( local,4)) => local(:,:,:,:)
+      global3D(1:size(global,1),1:size(global,2)*size(global,3)*size(global,4)) => global(:,:,:,:)
       call mpp_global_field_UG( domain, local3D, global3D, flags, default_data )
     end subroutine MPP_GLOBAL_FIELD_UG_5D_
 !> @}

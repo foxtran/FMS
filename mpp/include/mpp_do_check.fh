@@ -24,7 +24,8 @@
 
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_CHECK_3D_( f_addrs, domain, check, d_type, ke, flags, name)
-      integer(i8_kind),         intent(in) :: f_addrs(:,:)
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      type(c_ptr),                intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
       type(overlapSpec),          intent(in) :: check
       MPP_TYPE_,                  intent(in) :: d_type  !<creates unique interface
@@ -32,15 +33,15 @@
       integer, optional,          intent(in) :: flags
       character(len=*), optional, intent(in) :: name
 
-      MPP_TYPE_ :: field(check%xbegin:check%xend, check%ybegin:check%yend,ke)
-      pointer(ptr_field, field)
+      MPP_TYPE_, pointer :: field(:,:,:)
+      MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+      integer                     :: shape(3)
       integer                     :: update_flags
       character(len=8)            :: text
       character(len=64)           :: field_name
 
 !equate to mpp_domains_stack
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer( ptr, buffer )
+      MPP_TYPE_, pointer :: buffer(:)
       integer :: buffer_pos
       integer,    allocatable :: msg1(:), msg2(:)
 !receive domains saved here for unpacking
@@ -51,8 +52,9 @@
       integer :: buffer_recv_size, nlist
       integer :: outunit
 
+      shape = [check%xend-check%xbegin+1, check%yend-check%ybegin+1, ke]
       outunit = stdout()
-      ptr = LOC(mpp_domains_stack)
+      call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
       l_size = size(f_addrs,1)
 
       update_flags = XUPDATE+YUPDATE   !default
@@ -149,7 +151,8 @@
             select case( check%recv(m)%rotation(n) )
             case(ZERO)
                do l = 1, l_size ! loop over number of fields
-                  ptr_field = f_addrs(l, tMe)
+                  call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape)
+                  field(check%xbegin:check%xend, check%ybegin:check%yend, 1:ke) => tmpptr
                   do k = 1,ke
                      do j = js, je
                         do i = is, ie
@@ -161,7 +164,8 @@
                end do
             case(MINUS_NINETY)
                do l = 1, l_size ! loop over number of fields
-                  ptr_field = f_addrs(l, tMe)
+                  call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape)
+                  field(check%xbegin:check%xend, check%ybegin:check%yend, 1:ke) => tmpptr
                   do k = 1,ke
                      do j = je, js, -1
                         do i = is, ie
@@ -174,7 +178,8 @@
                end do
             case(NINETY)
                do l = 1, l_size ! loop over number of fields
-                  ptr_field = f_addrs(l, tMe)
+                  call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape)
+                  field(check%xbegin:check%xend, check%ybegin:check%yend, 1:ke) => tmpptr
                   do k = 1,ke
                      do j = js, je
                         do i = ie, is, -1
@@ -187,7 +192,8 @@
                end do
             case(ONE_HUNDRED_EIGHTY)
                do l = 1, l_size ! loop over number of fields
-                  ptr_field = f_addrs(l, tMe)
+                  call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape)
+                  field(check%xbegin:check%xend, check%ybegin:check%yend, 1:ke) => tmpptr
                   do k = 1,ke
                      do j = je, js, -1
                         do i = ie, is, -1
@@ -225,7 +231,8 @@
             buffer_pos = pos
             tMe = check%recv(m)%tileMe(n)
             do l=1, l_size  ! loop over number of fields
-               ptr_field = f_addrs(l, tMe)
+               call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape)
+               field(check%xbegin:check%xend, check%ybegin:check%yend, 1:ke) => tmpptr
                do k = 1,ke
                   do j = js, je
                      do i = is, ie

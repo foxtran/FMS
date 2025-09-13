@@ -17,9 +17,10 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
-!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) &
+!$OMP shared(nunpack,group,nscalar,buffer,nvector,ksize,buffer_start_pos,shape_f,shape_x,shape_y) &
 !$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
-!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy, n,k )
+!$OMP                                  field, fieldx, fieldy, tmpptr, n,k )
   do n = nunpack, 1, -1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
      pos = buffer_pos
@@ -27,7 +28,8 @@ if( group%k_loop_inside ) then
      js = group%unpack_js(n); je = group%unpack_je(n)
      if( group%unpack_type(n) == FIELD_S ) then
         do l=1,nscalar  ! loop over number of fields
-           ptr_field = group%addrs_s(l)
+           call c_f_pointer(group%addrs_s(l), tmpptr, shape=shape_f)
+           field(group%is_s:group%ie_s,group%js_s:group%je_s, 1:group%ksize_s) => tmpptr
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
@@ -39,7 +41,8 @@ if( group%k_loop_inside ) then
         end do
      else if( group%unpack_type(n) == FIELD_X ) then
         do l=1,nvector  ! loop over number of fields
-           ptr_fieldx = group%addrs_x(l)
+           call c_f_pointer(group%addrs_x(l), tmpptr, shape=shape_x)
+           fieldx(group%is_x:group%ie_x,group%js_x:group%je_x,1:group%ksize_v) => tmpptr
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
@@ -51,7 +54,8 @@ if( group%k_loop_inside ) then
         end do
      else if( group%unpack_type(n) == FIELD_Y ) then
         do l=1,nvector  ! loop over number of fields
-           ptr_fieldy = group%addrs_y(l)
+           call c_f_pointer(group%addrs_y(l), tmpptr, shape=shape_y)
+           fieldy(group%is_y:group%ie_y,group%js_y:group%je_y,1:group%ksize_v) => tmpptr
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
@@ -64,9 +68,10 @@ if( group%k_loop_inside ) then
      endif
   enddo
 else
-!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP parallel do default(none) &
+!$OMP shared(nunpack,group,nscalar,buffer,nvector,ksize,buffer_start_pos,shape_f,shape_x,shape_y) &
 !$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
-!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
+!$OMP                                  field, fieldx, fieldy, tmpptr,n,k)
   do nk = nunpack*ksize, 1, -1
      n = (nk-1)/ksize + 1
      k = mod((nk-1), ksize) + 1
@@ -76,7 +81,8 @@ else
      js = group%unpack_js(n); je = group%unpack_je(n)
      if( group%unpack_type(n) == FIELD_S ) then
         do l=1,nscalar  ! loop over number of fields
-           ptr_field = group%addrs_s(l)
+           call c_f_pointer(group%addrs_s(l), tmpptr, shape=shape_f)
+           field(group%is_s:group%ie_s,group%js_s:group%je_s, 1:group%ksize_s) => tmpptr
            do j = js, je
               do i = is, ie
                  pos = pos + 1
@@ -86,7 +92,8 @@ else
         end do
      else if( group%unpack_type(n) == FIELD_X ) then
         do l=1,nvector  ! loop over number of fields
-           ptr_fieldx = group%addrs_x(l)
+           call c_f_pointer(group%addrs_x(l), tmpptr, shape=shape_x)
+           fieldx(group%is_x:group%ie_x,group%js_x:group%je_x,1:group%ksize_v) => tmpptr
            do j = js, je
               do i = is, ie
                  pos = pos + 1
@@ -96,7 +103,8 @@ else
         end do
      else if( group%unpack_type(n) == FIELD_Y ) then
         do l=1,nvector  ! loop over number of fields
-           ptr_fieldy = group%addrs_y(l)
+           call c_f_pointer(group%addrs_y(l), tmpptr, shape=shape_y)
+           fieldy(group%is_y:group%ie_y,group%js_y:group%je_y,1:group%ksize_v) => tmpptr
            do j = js, je
               do i = is, ie
                  pos = pos + 1

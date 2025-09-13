@@ -209,6 +209,7 @@ private
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
   public :: get_ascii_file_num_lines, get_ascii_file_num_lines_and_length
   public :: mpp_record_time_start, mpp_record_time_end
+  public :: get_pointer_address
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
@@ -1382,6 +1383,20 @@ private
 #include <system_clock.fh>
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
+
+  !> @brief converts c_ptr to integer address for pointer arithmetics
+  !!
+  !! hack of Fortran language for getting integer representation of c_ptr
+  !!
+  !> @param[in] pointer   pointer which address should be presented as integer
+  !> @return              integer representation of pointer's address
+  !> @author       Igor S. Gerasimov (foxtranigor@gmail.com)
+  pure function get_pointer_address(pointer) result(address)
+    use, intrinsic :: iso_c_binding, only: c_ptr, c_intptr_t
+    type(c_ptr), intent(in) :: pointer
+    integer(c_intptr_t) :: address
+    address = transfer(pointer, address)
+  end function get_pointer_address
 
   end module mpp_mod
 !> @}

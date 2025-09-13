@@ -122,6 +122,7 @@
 
 !#####################################################################
 subroutine init_nonblock_type( nonblock_obj )
+   use, intrinsic :: iso_c_binding, only: c_null_ptr
    type(nonblock_type), intent(inout) :: nonblock_obj
 
 
@@ -150,8 +151,8 @@ subroutine init_nonblock_type( nonblock_obj )
    nonblock_obj%buffer_pos_send(:) = 0
    nonblock_obj%buffer_pos_recv(:) = 0
    nonblock_obj%nfields            = 0
-   nonblock_obj%field_addrs(:)     = 0
-   nonblock_obj%field_addrs2(:)    = 0
+   nonblock_obj%field_addrs(:)     = c_null_ptr
+   nonblock_obj%field_addrs2(:)    = c_null_ptr
 
    return
 

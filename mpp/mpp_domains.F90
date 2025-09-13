@@ -94,6 +94,8 @@ module mpp_domains_mod
   use mpi
 #endif
 
+  use, intrinsic :: iso_c_binding, only : c_ptr, c_null_ptr
+
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -108,8 +110,8 @@ module mpp_domains_mod
   use mpp_parameter_mod,      only : EVENT_SEND, EVENT_RECV, ROOT_GLOBAL
   use mpp_parameter_mod,      only : NONBLOCK_UPDATE_TAG, EDGEONLY, EDGEUPDATE
   use mpp_parameter_mod,      only : NONSYMEDGE, NONSYMEDGEUPDATE
-  use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stack
-  use mpp_data_mod,           only : mpp_domains_stack_nonblock, ptr_domains_stack_nonblock
+  use mpp_data_mod,           only : mpp_domains_stack, ptr_domains_stakc
+  use mpp_data_mod,           only : mpp_domains_stack_nonblock, ptr_domains_stakc_nonblock
   use mpp_mod,                only : mpp_pe, mpp_root_pe, mpp_npes, mpp_error, FATAL, WARNING, NOTE
   use mpp_mod,                only : stdout, stderr, stdlog, mpp_send, mpp_recv, mpp_transmit, mpp_sync_self
   use mpp_mod,                only : mpp_clock_id, mpp_clock_begin, mpp_clock_end
@@ -498,9 +500,9 @@ module mpp_domains_mod
      private
      logical            :: initialized=.false.
      integer(i8_kind) :: id=-9999
-     integer(i8_kind) :: l_addr  =-9999
-     integer(i8_kind) :: l_addrx =-9999
-     integer(i8_kind) :: l_addry =-9999
+     type(c_ptr) :: l_addr  =c_null_ptr
+     type(c_ptr) :: l_addrx =c_null_ptr
+     type(c_ptr) :: l_addry =c_null_ptr
      type(domain2D), pointer :: domain     =>NULL()
      type(domain2D), pointer :: domain_in  =>NULL()
      type(domain2D), pointer :: domain_out =>NULL()
@@ -564,8 +566,8 @@ module mpp_domains_mod
      integer, dimension(MAX_REQUEST) :: type_recv
      integer, dimension(MAX_REQUEST) :: buffer_pos_send
      integer, dimension(MAX_REQUEST) :: buffer_pos_recv
-     integer(i8_kind)              :: field_addrs(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)              :: field_addrs2(MAX_DOMAIN_FIELDS)
+     type(c_ptr)                     :: field_addrs(MAX_DOMAIN_FIELDS)
+     type(c_ptr)                     :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields
   end type nonblock_type
 
@@ -616,9 +618,9 @@ module mpp_domains_mod
      integer            :: unpack_ie(MAXOVERLAP)
      integer            :: unpack_js(MAXOVERLAP)
      integer            :: unpack_je(MAXOVERLAP)
-     integer(i8_kind) :: addrs_s(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_x(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_y(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_s(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_x(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_y(MAX_DOMAIN_FIELDS)
      integer            :: buffer_start_pos = -1
      integer            :: request_send(MAX_REQUEST)
      integer            :: request_recv(MAX_REQUEST)
