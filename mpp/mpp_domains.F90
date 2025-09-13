@@ -618,9 +618,9 @@ module mpp_domains_mod
      integer            :: unpack_ie(MAXOVERLAP)
      integer            :: unpack_js(MAXOVERLAP)
      integer            :: unpack_je(MAXOVERLAP)
-     integer(i8_kind) :: addrs_s(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_x(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_y(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_s(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_x(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_y(MAX_DOMAIN_FIELDS)
      integer            :: buffer_start_pos = -1
      integer            :: request_send(MAX_REQUEST)
      integer            :: request_recv(MAX_REQUEST)
