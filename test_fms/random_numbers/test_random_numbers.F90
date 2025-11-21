@@ -38,16 +38,23 @@ real(k), dimension(n_moments) :: moment_sigma !> Standard deviations of sample m
 
 type(time_type) :: now !> Current date and time
 
+print *, __LINE__
 call fms_init
+
+print *, __LINE__
 
 if (mpp_npes() .ne. 4) then
   call mpp_error(fatal, "The random_numbers unit test requires four PEs")
 endif
 
+print *, __LINE__
 call set_time
+print *, __LINE__
 call test_constructSeed
+print *, __LINE__
 call test_getRandomNumbers
 
+print *, __LINE__
 call fms_end
 
 contains
@@ -56,15 +63,19 @@ contains
 subroutine set_time
   integer :: now_values(8) !> Values returned by the date_and_time() intrinsic
 
+print *, __LINE__
   call set_calendar_type(JULIAN)
+print *, __LINE__
   call date_and_time(values=now_values)
 
+print *, __LINE__
   now = set_date(now_values(1), now_values(2), now_values(3), &
                  now_values(5), now_values(6), now_values(7))
 end subroutine set_time
 
 !> Test random_numbers_mod's constructSeed()
 subroutine test_constructSeed
+print *, __LINE__
   if (mpp_pe() .eq. 0) then
     call constructSeed_assert(seeds(1), seeds(1), now)
     call constructSeed_assert(seeds(1), seeds(1), now, 0)
@@ -83,7 +94,9 @@ subroutine test_constructSeed
 
     call constructSeed_assert(seeds(2), seeds(3), now,  20)
     call constructSeed_assert(seeds(2), seeds(3), now, -20)
+print *, __LINE__
   endif
+print *, __LINE__
 end subroutine test_constructSeed
 
 subroutine constructSeed_assert(i, j, time, perm)
@@ -109,20 +122,29 @@ subroutine test_getRandomNumbers
 
   select case (mpp_pe())
     case (0)
+print *, __LINE__
       stream = initializeRandomNumberStream(seeds(1))
       call test_getRandomNumbers_dispatch(stream)
+print *, __LINE__
     case (1)
+print *, __LINE__
       stream = initializeRandomNumberStream(seeds(2))
       call test_getRandomNumbers_dispatch(stream)
+print *, __LINE__
     case (2)
+print *, __LINE__
       stream = initializeRandomNumberStream(seeds)
       call test_getRandomNumbers_dispatch(stream)
+print *, __LINE__
     case (3)
+print *, __LINE__
       stream = initializeRandomNumberStream(constructSeed(seeds(2), seeds(3), now))
       call test_getRandomNumbers_dispatch(stream)
+print *, __LINE__
     case default
       call mpp_error(fatal, "Unexpected PE: " // string(mpp_pe()))
   end select
+print *, __LINE__
 end subroutine test_getRandomNumbers
 
 ! Expression for the expectation value of the i-th raw moment
@@ -142,9 +164,11 @@ end subroutine calc_expected_moments
 !> Invoke the 1D and 2D tests for a given random number stream
 subroutine test_getRandomNumbers_dispatch(stream)
   type(randomNumberStream), intent(inout) :: stream !> Random number stream
+print *, __LINE__
 
   call test_samples_iter(stream, test_sample_1d, n0_1d)
   call test_samples_iter(stream, test_sample_2d, n0_2d)
+print *, __LINE__
 end subroutine test_getRandomNumbers_dispatch
 
 !> Run the requested test using progressively larger sample sizes, until ten
@@ -169,12 +193,14 @@ subroutine test_samples_iter(stream, test, n0)
   real(k) :: x !> Sample for 0D test
   integer :: n !> Sample size for 1D or 2D test
   integer :: pass_counter !> Number of test passes
+print *, __LINE__
 
   ! 0D case
   ! Draw a scalar and check that it's within [0,1]
 
   call getRandomNumbers(stream, x)
   call check_bounds(x)
+print *, __LINE__
 
   ! 1D and 2D cases
   ! Attempt to draw ten samples for which the first 1,000 moments are within one
@@ -183,11 +209,13 @@ subroutine test_samples_iter(stream, test, n0)
 
   n = n0
   pass_counter = 0
+print *, __LINE__
 
   do while (pass_counter .lt. required_passes)
     if (test(stream, n)) then
       pass_counter = pass_counter + 1
     endif
+print *, __LINE__
 
     n = n * 11 / 10
   enddo
@@ -202,10 +230,12 @@ function test_sample_1d(stream, n)
   integer :: i !> Indices into v(:)
 
   call getRandomNumbers(stream, v)
+print *, __LINE__
 
   do i = 1, n
     call check_bounds(v(i))
   enddo
+print *, __LINE__
 
   test_sample_1d = compare_sample_moments(v)
 end function test_sample_1d
@@ -241,9 +271,11 @@ function compare_sample_moments(v)
 
   real(k) :: moment_sample !> Value of the i-th sample moment, calculated from v(:)
 
+print *, __LINE__
   n = size(v)
   allocate(vi(n))
   vi = 1._k
+print *, __LINE__
 
   do i = 1, n_moments
     vi = vi * v
@@ -254,6 +286,7 @@ function compare_sample_moments(v)
       return
     endif
   enddo
+print *, __LINE__
 
   compare_sample_moments = .true.
 end function compare_sample_moments
@@ -261,10 +294,12 @@ end function compare_sample_moments
 !> Check that a value lies within the 0<x<1 range
 subroutine check_bounds(x)
   real(k), intent(in) :: x !> Scalar value to check
+print *, __LINE__
 
   if (x.lt.0. .or. x.gt.1.) then
     call mpp_error(fatal, "Random number " // string(x) // " is out of expected bounds: [0, 1]")
   endif
+print *, __LINE__
 end subroutine check_bounds
 
 !> Compare two arrays of integers
@@ -273,6 +308,7 @@ subroutine array_compare_1d(arr1, arr2, msg)
   character(*), intent(in) :: msg !> Error message to be shown if the comparison fails
   integer :: m, n !> The sizes of the two arrays
   integer :: i !> Loop counter
+print *, __LINE__
 
   m = size(arr1)
   n = size(arr2)
@@ -282,6 +318,7 @@ subroutine array_compare_1d(arr1, arr2, msg)
     write(stderr(), "(A)") "Array 1 has size " // string(m) // " and array 2 has size " // string(n)
     call mpp_error(FATAL, msg)
   endif
+print *, __LINE__
 
   do i=1, m
     if (arr1(i) .ne. arr2(i)) then
@@ -291,6 +328,7 @@ subroutine array_compare_1d(arr1, arr2, msg)
       call mpp_error(FATAL, msg)
     endif
   enddo
+print *, __LINE__
 end subroutine array_compare_1d
 
 end program test_random_numbers
