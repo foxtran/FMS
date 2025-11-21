@@ -227,9 +227,10 @@ function test_sample_1d(stream, n)
   type(randomNumberStream), intent(inout) :: stream !> Random number stream
   integer, intent(in) :: n !> Length of the 1D sample vector
   logical :: test_sample_1d !> True if the test passes for this sample
-  real(k) :: v(n) !> Sample vector
+  real(k), allocatable :: v(:) !> Sample vector
   integer :: i !> Indices into v(:)
 
+  allocate(v(n))
 print *, __LINE__
   call getRandomNumbers(stream, v)
 print *, __LINE__
@@ -240,6 +241,8 @@ print *, __LINE__
 print *, __LINE__
 
   test_sample_1d = compare_sample_moments(v)
+
+  deallocate(v)
 end function test_sample_1d
 
 !> Draw a random sample and test its values and moments (2D)
@@ -247,9 +250,10 @@ function test_sample_2d(stream, n)
   type(randomNumberStream), intent(inout) :: stream !> Random number stream
   integer, intent(in) :: n !> Dimensions of the 2D sample array
   logical :: test_sample_2d !> True if the test passes for this sample
-  real(k) :: arr(n,n) !> Sample array
+  real(k), allocatable :: arr(:,:) !> Sample array
   integer :: i, j !> Indices into arr(:,:)
 
+  allocate(arr(n,n))
 print *, __LINE__
   call getRandomNumbers(stream, arr)
 
@@ -261,6 +265,7 @@ print *, __LINE__
   enddo
 
   test_sample_2d = compare_sample_moments(reshape(arr, [size(arr)]))
+  deallocate(arr)
 print *, __LINE__
 end function test_sample_2d
 
