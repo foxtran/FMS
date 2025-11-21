@@ -167,6 +167,7 @@ subroutine test_getRandomNumbers_dispatch(stream)
 print *, __LINE__
 
   call test_samples_iter(stream, test_sample_1d, n0_1d)
+print *, __LINE__
   call test_samples_iter(stream, test_sample_2d, n0_2d)
 print *, __LINE__
 end subroutine test_getRandomNumbers_dispatch
@@ -230,6 +231,7 @@ function test_sample_1d(stream, n)
   real(k), allocatable :: v(:) !> Sample vector
   integer :: i !> Indices into v(:)
 
+print *, __LINE__
   allocate(v(n))
 print *, __LINE__
   call getRandomNumbers(stream, v)
@@ -253,6 +255,7 @@ function test_sample_2d(stream, n)
   real(k), allocatable :: arr(:,:) !> Sample array
   integer :: i, j !> Indices into arr(:,:)
 
+print *, __LINE__
   allocate(arr(n,n))
 print *, __LINE__
   call getRandomNumbers(stream, arr)
