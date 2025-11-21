@@ -212,6 +212,7 @@ print *, __LINE__
 print *, __LINE__
 
   do while (pass_counter .lt. required_passes)
+print *, __LINE__, pass_counter
     if (test(stream, n)) then
       pass_counter = pass_counter + 1
     endif
@@ -229,6 +230,7 @@ function test_sample_1d(stream, n)
   real(k) :: v(n) !> Sample vector
   integer :: i !> Indices into v(:)
 
+print *, __LINE__
   call getRandomNumbers(stream, v)
 print *, __LINE__
 
@@ -248,8 +250,10 @@ function test_sample_2d(stream, n)
   real(k) :: arr(n,n) !> Sample array
   integer :: i, j !> Indices into arr(:,:)
 
+print *, __LINE__
   call getRandomNumbers(stream, arr)
 
+print *, __LINE__
   do j = 1, n
     do i = 1, n
       call check_bounds(arr(i, j))
@@ -257,6 +261,7 @@ function test_sample_2d(stream, n)
   enddo
 
   test_sample_2d = compare_sample_moments(reshape(arr, [size(arr)]))
+print *, __LINE__
 end function test_sample_2d
 
 !> Check that the first 1,000 moments of a sample are within one standard
