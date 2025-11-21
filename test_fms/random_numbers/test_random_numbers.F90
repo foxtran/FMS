@@ -175,7 +175,7 @@ end subroutine test_getRandomNumbers_dispatch
 !> Run the requested test using progressively larger sample sizes, until ten
 !> passing samples have been drawn
 subroutine test_samples_iter(stream, test, n0)
-  abstract interface
+  interface
     !> Abstract interface for test_sample_1d and test_sample_2d
     function test_sample(stream, n)
       import :: randomNumberStream
