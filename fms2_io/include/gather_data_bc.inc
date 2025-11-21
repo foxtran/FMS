@@ -197,7 +197,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send
           !! to the fileobj's root, but because fileobj's root doesn't have any data, we just create dummy data and
           !! not write it later
-          allocate(local_buf_r4_kind(1,1,1))
+          allocate(local_buf_r4_kind(1,1,k_glob))
           local_buf_r4_kind = 0.
           isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob
           i1=1; i2=1; j1=1; j2=1
@@ -227,7 +227,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send
           !! to the fileobj's root, but because fileobj's root doesn't have any data, we just create dummy data and
           !! not write it later
-          allocate(local_buf_r8_kind(1,1,1))
+          allocate(local_buf_r8_kind(1,1,k_glob))
           local_buf_r8_kind = 0.
           isc = 1+i_glob; i_add=0; iec=1+i_glob; jsc=j_glob; j_add=0; jec=j_glob
           i1=1; i2=1; j1=1; j2=1
