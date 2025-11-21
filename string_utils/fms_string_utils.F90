@@ -229,12 +229,12 @@ contains
     character (len=*), intent (in) :: str_in !< Fortran string to copy to C string
     integer :: i !< for looping
 !> Drop an error if the C string is not large enough to hold the input and the c_null_char at the end.
-    if (len(trim(str_in)) .ge. size(dest)) call mpp_error(FATAL, &
-      "The string "//trim(str_in)//" is larger than the destination C string")
+    if (len_trim(str_in) .ge. size(dest)) call mpp_error(FATAL, &
+      "The string '"//trim(str_in)//"' is larger than the destination C string")
 !> Copy c_null_char into each spot in dest
     dest = c_null_char
 !> Loop though and put each character of the Fortran string into the C string array
-    do i = 1, len(trim(str_in))
+    do i = 1, len_trim(str_in)
       dest(i) = str_in(i:i)
     enddo
 end subroutine fms_f2c_string
