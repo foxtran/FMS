@@ -20,13 +20,12 @@
   function MPP_GLOBAL_REDUCE_2D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_2D_
     type(domain2D), intent(in) :: domain
-    MPP_TYPE_, intent(in) :: field(:,:)
+    MPP_TYPE_, target, contiguous, intent(in) :: field(:,:)
     integer, intent(out), optional :: locus(2)
     integer, intent(in),  optional :: position
-    MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
+    MPP_TYPE_, pointer :: field3D(:,:,:)
     integer :: locus3D(3)
-    pointer( ptr, field3D )
-    ptr = LOC(field)
+    field3D(1:size(field,1),1:size(field,2),1:1) => field(:,:)
     if( PRESENT(locus) )then
         MPP_GLOBAL_REDUCE_2D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus = locus3D(1:2)
@@ -94,14 +93,13 @@
   function MPP_GLOBAL_REDUCE_4D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_4D_
     type(domain2D), intent(in) :: domain
-    MPP_TYPE_, intent(in) :: field(:,:,:,:)
+    MPP_TYPE_, target, contiguous, intent(in) :: field(:,:,:,:)
     integer, intent(out), optional :: locus(4)
     integer, intent(in),  optional :: position
 
-    MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
+    MPP_TYPE_, pointer :: field3D(:,:,:)
     integer :: locus3D(3)
-    pointer( ptr, field3D )
-    ptr = LOC(field)
+    field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)) => field(:,:,:,:)
     if( PRESENT(locus) )then
         MPP_GLOBAL_REDUCE_4D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)
@@ -120,14 +118,13 @@
   function MPP_GLOBAL_REDUCE_5D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_5D_
     type(domain2D), intent(in) :: domain
-    MPP_TYPE_, intent(in) :: field(:,:,:,:,:)
+    MPP_TYPE_, target, contiguous, intent(in) :: field(:,:,:,:,:)
     integer, intent(out), optional :: locus(5)
     integer, intent(in),  optional :: position
 
-    MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4)*size(field,5))
+    MPP_TYPE_, pointer :: field3D(:,:,:)
     integer :: locus3D(3)
-    pointer( ptr, field3D )
-    ptr = LOC(field)
+    field3D(1:size(field,1),1:size(field,2),1:size(field,3)*size(field,4)*size(field,5)) => field(:,:,:,:,:)
     if( PRESENT(locus) )then
         MPP_GLOBAL_REDUCE_5D_ = MPP_GLOBAL_REDUCE_3D_( domain, field3D, locus3D, position )
         locus(1:2) = locus3D(1:2)

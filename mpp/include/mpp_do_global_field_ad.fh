@@ -24,6 +24,7 @@
     !> Gets a local ad field from a global field
     !! global field may be on compute OR data domain
     subroutine MPP_DO_GLOBAL_FIELD_3D_AD_( domain, local, global, tile, ishift, jshift, flags, default_data)
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(inout)         ::  local(:,:,:)
       integer, intent(in)           :: tile, ishift, jshift
@@ -34,13 +35,11 @@
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je, num_word_me
       integer :: ipos, jpos
       logical :: xonly, yonly, root_only, global_on_this_pe
-      MPP_TYPE_ :: clocal ((domain%x(1)%compute%size+ishift)    *(domain%y(1)%compute%size+jshift)    *size(local,3))
-      MPP_TYPE_ :: cremote((domain%x(1)%compute%max_size+ishift)*(domain%y(1)%compute%max_size+jshift)*size(local,3))
+      MPP_TYPE_, pointer :: clocal (:)
+      MPP_TYPE_, pointer :: cremote(:)
+      integer :: local_stack_size, remote_stack_size
       integer :: stackuse
       character(len=8) :: text
-
-      pointer( ptr_local,  clocal  )
-      pointer( ptr_remote, cremote )
 
       stackuse = size(clocal(:))+size(cremote(:))
       if( stackuse.GT.mpp_domains_stack_size )then
@@ -51,8 +50,10 @@
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
-      ptr_local  = LOC(mpp_domains_stack)
-      ptr_remote = LOC(mpp_domains_stack(size(clocal(:))+1))
+      local_stack_size  = (domain%x(1)%compute%size+ishift)    *(domain%y(1)%compute%size+jshift)    *size(local,3)
+      remote_stack_size = (domain%x(1)%compute%max_size+ishift)*(domain%y(1)%compute%max_size+jshift)*size(local,3)
+      call c_f_pointer(c_loc(mpp_domains_stack(1)),                  clocal,  [local_stack_size ])
+      call c_f_pointer(c_loc(mpp_domains_stack(local_stack_size+1)), cremote, [remote_stack_size])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 

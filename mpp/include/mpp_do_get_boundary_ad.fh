@@ -19,20 +19,18 @@
 !***********************************************************************
 
 subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, ke, d_type)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_associated, c_f_pointer, c_loc
   type(domain2D), intent(in)      :: domain
   type(overlapSpec),  intent(in)  :: bound
-  integer(i8_kind), intent(in)  :: f_addrs(:,:)
-  integer(i8_kind), intent(in)  :: b_addrs(:,:,:)
+  type(c_ptr),        intent(in)  :: f_addrs(:,:)
+  type(c_ptr),        intent(in)  :: b_addrs(:,:,:)
   integer,            intent(in)  :: bsize(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
 
-  MPP_TYPE_ :: field(bound%xbegin:bound%xend, bound%ybegin:bound%yend,ke)
-  MPP_TYPE_ :: ebuffer(bsize(1), ke), sbuffer(bsize(2), ke), wbuffer(bsize(3), ke), nbuffer(bsize(4), ke)
-  pointer(ptr_field, field)
-  pointer(ptr_ebuffer, ebuffer)
-  pointer(ptr_sbuffer, sbuffer)
-  pointer(ptr_wbuffer, wbuffer)
-  pointer(ptr_nbuffer, nbuffer)
+  MPP_TYPE_, pointer :: field(:,:,:)
+  MPP_TYPE_, pointer :: ebuffer(:,:), sbuffer(:,:), wbuffer(:,:), nbuffer(:,:)
+  MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+  integer :: shape_f(3), shape_e(2), shape_s(2), shape_w(2), shape_n(2)
 
   integer,    allocatable :: msg1(:), msg2(:)
   logical                 :: recv(4), send(4)
@@ -42,16 +40,20 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   character(len=8)        :: text
   integer                 :: outunit
 
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
+  MPP_TYPE_, pointer :: buffer(:)
 
-  pointer( ptr, buffer )
-  ptr = LOC(mpp_domains_stack)
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
 
+  shape_f = [bound%xend-bound%xbegin+1, bound%yend-bound%ybegin+1, ke]
+  shape_e = [bsize(1), ke]
+  shape_s = [bsize(2), ke]
+  shape_w = [bsize(3), ke]
+  shape_n = [bsize(4), ke]
   outunit = stdout()
   l_size = size(f_addrs,1)
 
   !---- determine recv(1) based on b_addrs ( east boundary )
-  num = count(b_addrs(1,:,1) == 0)
+  num = count_null_ptrs(b_addrs(1,:,1))
   if( num == 0 ) then
      recv(1) = .true.
   else if( num == l_size ) then
@@ -62,7 +64,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   endif
 
   !---- determine recv(2) based on b_addrs ( south boundary )
-  num = count(b_addrs(2,:,1) == 0)
+  num = count_null_ptrs(b_addrs(2,:,1))
   if( num == 0 ) then
      recv(2) = .true.
   else if( num == l_size ) then
@@ -73,7 +75,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   endif
 
   !---- determine recv(3) based on b_addrs ( west boundary )
-  num = count(b_addrs(3,:,1) == 0)
+  num = count_null_ptrs(b_addrs(3,:,1))
   if( num == 0 ) then
      recv(3) = .true.
   else if( num == l_size ) then
@@ -84,7 +86,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
   endif
 
   !---- determine recv(4) based on b_addrs ( north boundary )
-  num = count(b_addrs(4,:,1) == 0)
+  num = count_null_ptrs(b_addrs(4,:,1))
   if( num == 0 ) then
      recv(4) = .true.
   else if( num == l_size ) then
@@ -179,7 +181,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
            select case( bound%send(m)%rotation(n) )
            case(ZERO)
               do l=1,l_size
-                 ptr_field = f_addrs(l, tMe)
+                 call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape_f)
+                 field(bound%xbegin:bound%xend, bound%ybegin:bound%yend, 1:ke) => tmpptr
                  do k = 1, ke
                     do j = js, je
                        do i = is, ie
@@ -191,7 +194,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case( MINUS_NINETY )
               do l=1,l_size
-                 ptr_field = f_addrs(l, tMe)
+                 call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape_f)
+                 field(bound%xbegin:bound%xend, bound%ybegin:bound%yend, 1:ke) => tmpptr
                  do k = 1, ke
                     do j = je, js, -1
                        do i = is, ie
@@ -203,7 +207,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case( NINETY )
               do l=1,l_size
-                 ptr_field = f_addrs(l, tMe)
+                 call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape_f)
+                 field(bound%xbegin:bound%xend, bound%ybegin:bound%yend, 1:ke) => tmpptr
                  do k = 1, ke
                     do j = js, je
                        do i = ie, is, -1
@@ -215,7 +220,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case (ONE_HUNDRED_EIGHTY)
               do l=1,l_size
-                 ptr_field = f_addrs(l, tMe)
+                 call c_f_pointer(f_addrs(l, tMe), tmpptr, shape=shape_f)
+                 field(bound%xbegin:bound%xend, bound%ybegin:bound%yend, 1:ke) => tmpptr
                  do k = 1, ke
                     do j = je, js, -1
                        do i = ie, is, -1
@@ -261,7 +267,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
            select case( bound%recv(m)%dir(n) )
            case ( 1 ) ! EAST
               do l=1,l_size
-                 ptr_ebuffer = b_addrs(1, l, tMe)
+                 call c_f_pointer(b_addrs(1, l, tMe), ebuffer, shape=shape_e)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -275,7 +281,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 2 ) ! SOUTH
               do l=1,l_size
-                 ptr_sbuffer = b_addrs(2, l, tMe)
+                 call c_f_pointer(b_addrs(2, l, tMe), sbuffer, shape=shape_s)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -289,7 +295,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 3 ) ! WEST
               do l=1,l_size
-                 ptr_wbuffer = b_addrs(3, l, tMe)
+                 call c_f_pointer(b_addrs(3, l, tMe), wbuffer, shape=shape_w)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -303,7 +309,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
               end do
            case ( 4 ) ! norTH
               do l=1,l_size
-                 ptr_nbuffer = b_addrs(4, l, tMe)
+                 call c_f_pointer(b_addrs(4, l, tMe), nbuffer, shape=shape_n)
                  do k = 1, ke
                     index = bound%recv(m)%index(n)
                     do j = js, je
@@ -322,35 +328,38 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_( f_addrs, domain, bound, b_addrs, bsize, k
 
   call mpp_sync_self( )
 
+contains
+  integer function count_null_ptrs(ptrs) result(cnt)
+    type(c_ptr), intent(in) :: ptrs(:)
+    integer :: itr
+    cnt = 0
+    do itr = 1, size(ptrs)
+      if (.not.c_associated(ptrs(itr))) cnt = cnt + 1
+    end do
+  end function count_null_ptrs
 
 end subroutine MPP_DO_GET_BOUNDARY_AD_3D_
 
 
 subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy, b_addrsx, b_addrsy, &
                                         bsizex, bsizey, ke, d_type, flags, gridtype)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_associated, c_f_pointer, c_loc
   type(domain2D),     intent(in)  :: domain
   type(overlapSpec),  intent(in)  :: boundx, boundy
-  integer(i8_kind), intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
-  integer(i8_kind), intent(in)  :: b_addrsx(:,:,:), b_addrsy(:,:,:)
+  type(c_ptr),        intent(in)  :: f_addrsx(:,:), f_addrsy(:,:)
+  type(c_ptr),        intent(in)  :: b_addrsx(:,:,:), b_addrsy(:,:,:)
   integer,            intent(in)  :: bsizex(:), bsizey(:), ke
   MPP_TYPE_, intent(in)           :: d_type  ! creates unique interface
   integer, intent(in)             :: flags
   integer, intent(in)             :: gridtype
 
-  MPP_TYPE_ :: fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend,ke)
-  MPP_TYPE_ :: fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend,ke)
-  MPP_TYPE_ :: ebufferx(bsizex(1), ke), sbufferx(bsizex(2), ke), wbufferx(bsizex(3), ke), nbufferx(bsizex(4), ke)
-  MPP_TYPE_ :: ebuffery(bsizey(1), ke), sbuffery(bsizey(2), ke), wbuffery(bsizey(3), ke), nbuffery(bsizey(4), ke)
-  pointer(ptr_fieldx, fieldx)
-  pointer(ptr_fieldy, fieldy)
-  pointer(ptr_ebufferx, ebufferx)
-  pointer(ptr_sbufferx, sbufferx)
-  pointer(ptr_wbufferx, wbufferx)
-  pointer(ptr_nbufferx, nbufferx)
-  pointer(ptr_ebuffery, ebuffery)
-  pointer(ptr_sbuffery, sbuffery)
-  pointer(ptr_wbuffery, wbuffery)
-  pointer(ptr_nbuffery, nbuffery)
+  MPP_TYPE_, pointer :: fieldx(:,:,:), fieldy(:,:,:)
+  MPP_TYPE_, pointer :: ebufferx(:,:), sbufferx(:,:), wbufferx(:,:), nbufferx(:,:)
+  MPP_TYPE_, pointer :: ebuffery(:,:), sbuffery(:,:), wbuffery(:,:), nbuffery(:,:)
+  MPP_TYPE_, pointer, contiguous :: tmpptr(:,:,:)
+  integer :: shape_fx(3), shape_fy(3)
+  integer :: shape_ex(2), shape_sx(2), shape_wx(2), shape_nx(2)
+  integer :: shape_ey(2), shape_sy(2), shape_wy(2), shape_ny(2)
 
   integer,    allocatable :: msg1(:), msg2(:)
   logical                 :: recvx(4), sendx(4)
@@ -363,14 +372,24 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   character(len=8)        :: text
   integer                 :: outunit, shift, midpoint
 
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-  pointer( ptr, buffer )
-  ptr = LOC(mpp_domains_stack)
+  MPP_TYPE_, pointer :: buffer(:)
 
+  call c_f_pointer(c_loc(mpp_domains_stack), buffer, [size(mpp_domains_stack)])
+
+  shape_fx = [boundx%xend-boundx%xbegin+1, boundx%yend-boundx%ybegin+1, ke]
+  shape_fy = [boundy%xend-boundy%xbegin+1, boundy%yend-boundy%ybegin+1, ke]
+  shape_ex = [bsizex(1), ke]
+  shape_sx = [bsizex(2), ke]
+  shape_wx = [bsizex(3), ke]
+  shape_nx = [bsizex(4), ke]
+  shape_ey = [bsizey(1), ke]
+  shape_sy = [bsizey(2), ke]
+  shape_wy = [bsizey(3), ke]
+  shape_ny = [bsizey(4), ke]
   outunit = stdout()
   l_size = size(f_addrsx,1)
   !---- determine recv(1) based on b_addrs ( east boundary )
-  num = count(b_addrsx(1,:,1) == 0)
+  num = count_null_ptrs(b_addrsx(1,:,1))
   if( num == 0 ) then
      recvx(1) = .true.
   else if( num == l_size ) then
@@ -381,7 +400,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(2) based on b_addrs ( south boundary )
-  num = count(b_addrsx(2,:,1) == 0)
+  num = count_null_ptrs(b_addrsx(2,:,1))
   if( num == 0 ) then
      recvx(2) = .true.
   else if( num == l_size ) then
@@ -392,7 +411,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(3) based on b_addrs ( west boundary )
-  num = count(b_addrsx(3,:,1) == 0)
+  num = count_null_ptrs(b_addrsx(3,:,1))
   if( num == 0 ) then
      recvx(3) = .true.
   else if( num == l_size ) then
@@ -403,7 +422,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(4) based on b_addrs ( north boundary )
-  num = count(b_addrsx(4,:,1) == 0)
+  num = count_null_ptrs(b_addrsx(4,:,1))
   if( num == 0 ) then
      recvx(4) = .true.
   else if( num == l_size ) then
@@ -414,7 +433,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(1) based on b_addrs ( east boundary )
-  num = count(b_addrsy(1,:,1) == 0)
+  num = count_null_ptrs(b_addrsy(1,:,1))
   if( num == 0 ) then
      recvy(1) = .true.
   else if( num == l_size ) then
@@ -425,7 +444,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(2) based on b_addrs ( south boundary )
-  num = count(b_addrsy(2,:,1) == 0)
+  num = count_null_ptrs(b_addrsy(2,:,1))
   if( num == 0 ) then
      recvy(2) = .true.
   else if( num == l_size ) then
@@ -436,7 +455,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(3) based on b_addrs ( west boundary )
-  num = count(b_addrsy(3,:,1) == 0)
+  num = count_null_ptrs(b_addrsy(3,:,1))
   if( num == 0 ) then
      recvy(3) = .true.
   else if( num == l_size ) then
@@ -447,7 +466,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
   endif
 
   !---- determine recv(4) based on b_addrs ( north boundary )
-  num = count(b_addrsy(4,:,1) == 0)
+  num = count_null_ptrs(b_addrsy(4,:,1))
   if( num == 0 ) then
      recvy(4) = .true.
   else if( num == l_size ) then
@@ -588,8 +607,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
            do i = is ,ie, midpoint
               if( domain%x(1)%compute%begin == i )then
                  do l=1,l_size
-                    ptr_wbufferx = b_addrsx(3, l, tMe)
-                    ptr_wbuffery = b_addrsy(3, l, tMe)
+                    call c_f_pointer(b_addrsx(3, l, tMe), wbufferx, shape=shape_wx)
+                    call c_f_pointer(b_addrsy(3, l, tMe), wbuffery, shape=shape_wy)
                     do k = 1,ke
                        wbufferx(j,k) = 0
                        wbuffery(j,k) = 0
@@ -667,7 +686,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundy%recv(ind_y)%dir(n) )
               case ( 1 ) ! EAST
                  do l=1,l_size
-                    ptr_ebuffery = b_addrsy(1, l, tMe)
+                    call c_f_pointer(b_addrsy(1, l, tMe), ebuffery, shape=shape_ey)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -682,7 +701,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 2 ) ! SOUTH
                  do l=1,l_size
-                    ptr_sbuffery = b_addrsy(2, l, tMe)
+                    call c_f_pointer(b_addrsy(2, l, tMe), sbuffery, shape=shape_sy)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -697,7 +716,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 3 ) ! WEST
                  do l=1,l_size
-                    ptr_wbuffery = b_addrsy(3, l, tMe)
+                    call c_f_pointer(b_addrsy(3, l, tMe), wbuffery, shape=shape_wy)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -712,7 +731,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 4 ) ! norTH
                  do l=1,l_size
-                    ptr_nbuffery = b_addrsy(4, l, tMe)
+                    call c_f_pointer(b_addrsy(4, l, tMe), nbuffery, shape=shape_ny)
                     do k = 1, ke
                        index = boundy%recv(ind_y)%index(n)
                        do j = js, je
@@ -749,7 +768,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundx%recv(ind_x)%dir(n) )
               case ( 1 ) ! EAST
                  do l=1,l_size
-                    ptr_ebufferx = b_addrsx(1, l, tMe)
+                    call c_f_pointer(b_addrsx(1, l, tMe), ebufferx, shape=shape_ex)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -764,7 +783,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 2 ) ! SOUTH
                  do l=1,l_size
-                    ptr_sbufferx = b_addrsx(2, l, tMe)
+                    call c_f_pointer(b_addrsx(2, l, tMe), sbufferx, shape=shape_sx)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -779,7 +798,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 3 ) ! WEST
                  do l=1,l_size
-                    ptr_wbufferx = b_addrsx(3, l, tMe)
+                    call c_f_pointer(b_addrsx(3, l, tMe), wbufferx, shape=shape_wx)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -794,7 +813,7 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case ( 4 ) ! norTH
                  do l=1,l_size
-                    ptr_nbufferx = b_addrsx(4, l, tMe)
+                    call c_f_pointer(b_addrsx(4, l, tMe), nbufferx, shape=shape_nx)
                     do k = 1, ke
                        index = boundx%recv(ind_x)%index(n)
                        do j = js, je
@@ -952,7 +971,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundx%send(ind_x)%rotation(n) )
               case(ZERO)
                  do l=1,l_size
-                    ptr_fieldx = f_addrsx(l, tMe)
+                    call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                    fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                     do k = 1, ke
                        do j = js, je
                           do i = is, ie
@@ -965,7 +985,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               case( MINUS_NINETY )
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
-                       ptr_fieldy = f_addrsy(l, tMe)
+                       call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                       fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = is, ie
@@ -977,7 +998,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                     end do
                  else
                     do l=1,l_size
-                       ptr_fieldy = f_addrsy(l, tMe)
+                       call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                       fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = is, ie
@@ -990,7 +1012,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end if
               case( NINETY )
                  do l=1,l_size
-                    ptr_fieldy = f_addrsy(l, tMe)
+                    call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                    fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                     do k = 1, ke
                        do j = js, je
                           do i = ie, is, -1
@@ -1003,7 +1026,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               case (ONE_HUNDRED_EIGHTY)
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
-                       ptr_fieldx = f_addrsx(l, tMe)
+                       call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                       fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = ie, is, -1
@@ -1015,7 +1039,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                     end do
                  else
                     do l=1,l_size
-                       ptr_fieldx = f_addrsx(l, tMe)
+                       call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                       fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = ie, is, -1
@@ -1048,7 +1073,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               select case( boundy%send(ind_y)%rotation(n) )
               case(ZERO)
                  do l=1,l_size
-                    ptr_fieldy = f_addrsy(l, tMe)
+                    call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                    fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                     do k = 1, ke
                        do j = js, je
                           do i = is, ie
@@ -1060,7 +1086,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                  end do
               case( MINUS_NINETY )
                  do l=1,l_size
-                    ptr_fieldx = f_addrsx(l, tMe)
+                    call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                    fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                     do k = 1, ke
                        do j = je, js, -1
                           do i = is, ie
@@ -1073,7 +1100,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               case( NINETY )
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
-                       ptr_fieldx = f_addrsx(l, tMe)
+                       call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                       fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = js, je
                              do i = ie, is, -1
@@ -1085,7 +1113,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                     end do
                  else
                     do l=1,l_size
-                       ptr_fieldx = f_addrsx(l, tMe)
+                       call c_f_pointer(f_addrsx(l, tMe), tmpptr, shape=shape_fx)
+                       fieldx(boundx%xbegin:boundx%xend, boundx%ybegin:boundx%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = js, je
                              do i = ie, is, -1
@@ -1099,7 +1128,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
               case (ONE_HUNDRED_EIGHTY)
                  if( BTEST(flags,SCALAR_BIT) ) then
                     do l=1,l_size
-                       ptr_fieldy = f_addrsy(l, tMe)
+                       call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                       fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = ie, is, -1
@@ -1111,7 +1141,8 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
                     end do
                  else
                     do l=1,l_size
-                       ptr_fieldy = f_addrsy(l, tMe)
+                       call c_f_pointer(f_addrsy(l, tMe), tmpptr, shape=shape_fy)
+                       fieldy(boundy%xbegin:boundy%xend, boundy%ybegin:boundy%yend, 1:ke) => tmpptr
                        do k = 1, ke
                           do j = je, js, -1
                              do i = ie, is, -1
@@ -1144,5 +1175,14 @@ subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_(f_addrsx, f_addrsy, domain, boundx, boun
 
   call mpp_sync_self( )
 
+contains
+  integer function count_null_ptrs(ptrs) result(cnt)
+    type(c_ptr), intent(in) :: ptrs(:)
+    integer :: itr
+    cnt = 0
+    do itr = 1, size(ptrs)
+      if (.not.c_associated(ptrs(itr))) cnt = cnt + 1
+    end do
+  end function count_null_ptrs
 
 end subroutine MPP_DO_GET_BOUNDARY_AD_3D_V_

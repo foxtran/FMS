@@ -23,16 +23,17 @@
 !> This routine is used to retrieve scalar ad boundary data for symmetric domain.
 subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
   type(domain2D),       intent(in)   :: domain
-  MPP_TYPE_,            intent(in)   :: field(:,:)
-  MPP_TYPE_, intent(inout), optional :: ebuffer(:), sbuffer(:), wbuffer(:), nbuffer(:)
+  MPP_TYPE_, target, contiguous,            intent(in)   :: field(:,:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebuffer(:), sbuffer(:), wbuffer(:), nbuffer(:)
   integer,      intent(in), optional :: flags, position, tile_count
   logical,      intent(in), optional :: complete
 
   integer                  :: ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=c_null_ptr
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0
   integer          :: buffer_size(4)
   integer          :: max_ntile, tile, update_position, ishift, jshift
@@ -85,41 +86,41 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrs(list, tile) = LOC(field)
+  f_addrs(list, tile) = c_loc(field)
   if(present(ebuffer)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D: ebuffer should not be present when north is folded')
      if(.not. need_ebuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D: ebuffer should not be present')
-     b_addrs(1, list, tile) = LOC(ebuffer)
+     b_addrs(1, list, tile) = c_loc(ebuffer)
      buffer_size(1) = size(ebuffer(:))
   else
-     b_addrs(1, list, tile) = 0
+     b_addrs(1, list, tile) = c_null_ptr
      buffer_size(1) = 1
   end if
   if(present(sbuffer)) then
      if(.not. need_sbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D: sbuffer should not be present')
-     b_addrs(2, list, tile) = LOC(sbuffer)
+     b_addrs(2, list, tile) = c_loc(sbuffer)
      buffer_size(2) = size(sbuffer(:))
   else
-     b_addrs(2, list, tile) = 0
+     b_addrs(2, list, tile) = c_null_ptr
      buffer_size(2) = 1
   end if
   if(present(wbuffer)) then
      if(.not. need_wbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D: wbuffer should not be present')
-     b_addrs(3, list, tile) = LOC(wbuffer)
+     b_addrs(3, list, tile) = c_loc(wbuffer)
      buffer_size(3) = size(wbuffer(:))
   else
-     b_addrs(3, list, tile) = 0
+     b_addrs(3, list, tile) = c_null_ptr
      buffer_size(3) = 1
   end if
   if(present(nbuffer)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D: nbuffer should not be present when north is folded')
      if(.not. need_nbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D: nbuffer should be be present')
-     b_addrs(4, list, tile) = LOC(nbuffer)
+     b_addrs(4, list, tile) = c_loc(nbuffer)
      buffer_size(4) = size(nbuffer(:))
   else
-     b_addrs(4, list, tile) = 0
+     b_addrs(4, list, tile) = c_null_ptr
      buffer_size(4) = 1
   end if
 
@@ -153,7 +154,7 @@ subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
         call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), domain, bound, b_addrs(:,1:l_size,1:ntile), &
              bsize, ksize, d_type)
      endif
-     l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ksize=0
+     l_size=0; f_addrs=c_null_ptr; bsize=0; b_addrs=c_null_ptr; isize=0;  jsize=0;  ksize=0
   end if
 
   return
@@ -164,16 +165,17 @@ end subroutine MPP_GET_BOUNDARY_AD_2D_
 !###############################################################################################
 subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
   type(domain2D),       intent(in)   :: domain
-  MPP_TYPE_,            intent(in)   :: field(:,:,:)
-  MPP_TYPE_, intent(inout), optional :: ebuffer(:,:), sbuffer(:,:), wbuffer(:,:), nbuffer(:,:)
+  MPP_TYPE_, target, contiguous,            intent(in)   :: field(:,:,:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebuffer(:,:), sbuffer(:,:), wbuffer(:,:), nbuffer(:,:)
   integer,      intent(in), optional :: flags, position, tile_count
   logical,      intent(in), optional :: complete
 
   integer                  :: ntile
   logical                  :: need_ebuffer, need_sbuffer, need_wbuffer, need_nbuffer
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=-9999
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrs=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrs=c_null_ptr
   integer, save    :: bsize(4)=0, isize=0, jsize=0, ksize=0, pos, list=0, l_size=0
   integer          :: buffer_size(4)
   integer          :: max_ntile, tile, update_position, ishift, jshift
@@ -226,41 +228,41 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrs(list, tile) = LOC(field)
+  f_addrs(list, tile) = c_loc(field)
   if(present(ebuffer)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D: ebuffer should not be present when north is folded')
      if(.not. need_ebuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: ebuffer should not be present')
-     b_addrs(1, list, tile) = LOC(ebuffer)
+     b_addrs(1, list, tile) = c_loc(ebuffer)
      buffer_size(1) = size(ebuffer,1)
   else
-     b_addrs(1, list, tile) = 0
+     b_addrs(1, list, tile) = c_null_ptr
      buffer_size(1) = 1
   end if
   if(present(sbuffer)) then
      if(.not. need_sbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: sbuffer should not be present')
-     b_addrs(2, list, tile) = LOC(sbuffer)
+     b_addrs(2, list, tile) = c_loc(sbuffer)
      buffer_size(2) = size(sbuffer,1)
   else
-     b_addrs(2, list, tile) = 0
+     b_addrs(2, list, tile) = c_null_ptr
      buffer_size(2) = 1
   end if
   if(present(wbuffer)) then
      if(.not. need_wbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: wbuffer should not be present')
-     b_addrs(3, list, tile) = LOC(wbuffer)
+     b_addrs(3, list, tile) = c_loc(wbuffer)
      buffer_size(3) = size(wbuffer,1)
   else
-     b_addrs(3, list, tile) = 0
+     b_addrs(3, list, tile) = c_null_ptr
      buffer_size(3) = 1
   end if
   if(present(nbuffer)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D: nbuffer should not be present when north is folded')
      if(.not. need_nbuffer) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D: nbuffer should not be present')
-     b_addrs(4, list, tile) = LOC(nbuffer)
+     b_addrs(4, list, tile) = c_loc(nbuffer)
      buffer_size(4) = size(nbuffer,1)
   else
-     b_addrs(4, list, tile) = 0
+     b_addrs(4, list, tile) = c_null_ptr
      buffer_size(4) = 1
   end if
 
@@ -296,7 +298,7 @@ subroutine MPP_GET_BOUNDARY_AD_3D_(field, domain, ebuffer, sbuffer, wbuffer, nbu
         call mpp_do_get_boundary(f_addrs(1:l_size,1:ntile), domain, bound, b_addrs(:,1:l_size,1:ntile), &
              bsize, ksize, d_type)
      endif
-     l_size=0; f_addrs=-9999; bsize=0; b_addrs=-9999; isize=0;  jsize=0;  ksize=0
+     l_size=0; f_addrs=c_null_ptr; bsize=0; b_addrs=c_null_ptr; isize=0;  jsize=0;  ksize=0
   end if
 
 end subroutine MPP_GET_BOUNDARY_AD_3D_
@@ -307,10 +309,11 @@ end subroutine MPP_GET_BOUNDARY_AD_3D_
 subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wbufferx, nbufferx, &
                                   ebuffery, sbuffery, wbuffery, nbuffery, flags, gridtype, &
                                   complete, tile_count)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
   type(domain2D),       intent(in)   :: domain
-  MPP_TYPE_,            intent(in)   :: fieldx(:,:), fieldy(:,:)
-  MPP_TYPE_, intent(inout), optional :: ebufferx(:), sbufferx(:), wbufferx(:), nbufferx(:)
-  MPP_TYPE_, intent(inout), optional :: ebuffery(:), sbuffery(:), wbuffery(:), nbuffery(:)
+  MPP_TYPE_, target, contiguous,            intent(in)   :: fieldx(:,:), fieldy(:,:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebufferx(:), sbufferx(:), wbufferx(:), nbufferx(:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebuffery(:), sbuffery(:), wbuffery(:), nbuffery(:)
   integer,      intent(in), optional :: flags, gridtype, tile_count
   logical,      intent(in), optional :: complete
 
@@ -318,10 +321,10 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
 
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=c_null_ptr
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=c_null_ptr
   integer, save    :: bsizex(4)=0, bsizey(4)=0, isize(2)=0, jsize(2)=0, ksize=0, l_size=0, list=0
   integer, save    :: offset_type, upflags
   integer          :: bufferx_size(4), buffery_size(4)
@@ -379,43 +382,43 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrsx(list, tile) = LOC(fieldx)
-  f_addrsy(list, tile) = LOC(fieldy)
+  f_addrsx(list, tile) = c_loc(fieldx)
+  f_addrsy(list, tile) = c_loc(fieldy)
 
   if(present(ebufferx)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D_V: ebufferx should not be present when north is folded')
      if(.not. need_ebufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: ebufferx should not be present')
-     b_addrsx(1, list, tile) = LOC(ebufferx)
+     b_addrsx(1, list, tile) = c_loc(ebufferx)
      bufferx_size(1) = size(ebufferx,1)
   else
-     b_addrsx(1, list, tile) = 0
+     b_addrsx(1, list, tile) = c_null_ptr
      bufferx_size(1) = 1
   end if
   if(present(sbufferx)) then
      if(.not. need_sbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: sbufferx should not be present')
-     b_addrsx(2, list, tile) = LOC(sbufferx)
+     b_addrsx(2, list, tile) = c_loc(sbufferx)
      bufferx_size(2) = size(sbufferx,1)
   else
-     b_addrsx(2, list, tile) = 0
+     b_addrsx(2, list, tile) = c_null_ptr
      bufferx_size(2) = 1
   end if
   if(present(wbufferx)) then
      if(.not. need_wbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: wbufferx should not be present')
-     b_addrsx(3, list, tile) = LOC(wbufferx)
+     b_addrsx(3, list, tile) = c_loc(wbufferx)
      bufferx_size(3) = size(wbufferx,1)
   else
-     b_addrsx(3, list, tile) = 0
+     b_addrsx(3, list, tile) = c_null_ptr
      bufferx_size(3) = 1
   end if
   if(present(nbufferx)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D_V: nbufferx should not be present when north is folded')
      if(.not. need_nbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: nbufferx should not be present')
-     b_addrsx(4, list, tile) = LOC(nbufferx)
+     b_addrsx(4, list, tile) = c_loc(nbufferx)
      bufferx_size(4) = size(nbufferx,1)
   else
-     b_addrsx(4, list, tile) = 0
+     b_addrsx(4, list, tile) = c_null_ptr
      bufferx_size(4) = 1
   end if
 
@@ -423,36 +426,36 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D_V: ebuffery should not be present when north is folded')
      if(.not. need_ebuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: ebuffery should not be present')
-     b_addrsy(1, list, tile) = LOC(ebuffery)
+     b_addrsy(1, list, tile) = c_loc(ebuffery)
      buffery_size(1) = size(ebuffery,1)
   else
-     b_addrsy(1, list, tile) = 0
+     b_addrsy(1, list, tile) = c_null_ptr
      buffery_size(1) = 1
   end if
   if(present(sbuffery)) then
      if(.not. need_sbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: sbuffery should not be present')
-     b_addrsy(2, list, tile) = LOC(sbuffery)
+     b_addrsy(2, list, tile) = c_loc(sbuffery)
      buffery_size(2) = size(sbuffery,1)
   else
-     b_addrsy(2, list, tile) = 0
+     b_addrsy(2, list, tile) = c_null_ptr
      buffery_size(2) = 1
   end if
   if(present(wbuffery)) then
      if(.not. need_wbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: wbuffery should not be present')
-     b_addrsy(3, list, tile) = LOC(wbuffery)
+     b_addrsy(3, list, tile) = c_loc(wbuffery)
      buffery_size(3) = size(wbuffery,1)
   else
-     b_addrsy(3, list, tile) = 0
+     b_addrsy(3, list, tile) = c_null_ptr
      buffery_size(3) = 1
   end if
   if(present(nbuffery)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_2D_V: nbuffery should not be present when north is folded')
      if(.not. need_nbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_2D_V: nbuffery should not be present')
-     b_addrsy(4, list, tile) = LOC(nbuffery)
+     b_addrsy(4, list, tile) = c_loc(nbuffery)
      buffery_size(4) = size(nbuffery,1)
   else
-     b_addrsy(4, list, tile) = 0
+     b_addrsy(4, list, tile) = c_null_ptr
      buffery_size(4) = 1
   end if
 
@@ -514,8 +517,8 @@ subroutine MPP_GET_BOUNDARY_AD_2D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
              bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0;
-     b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
+     l_size=0; f_addrsx=c_null_ptr; f_addrsy=c_null_ptr; bsizex=0; bsizey=0;
+     b_addrsx=c_null_ptr; b_addrsy=c_null_ptr; isize=0;  jsize=0;  ksize=0
   end if
 
 
@@ -528,11 +531,12 @@ end subroutine MPP_GET_BOUNDARY_AD_2D_V_
 subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx, wbufferx, nbufferx, &
                                   ebuffery, sbuffery, wbuffery, nbuffery, flags, gridtype, &
                                   complete, tile_count)
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
   type(domain2D),       intent(in)   :: domain
-  MPP_TYPE_,            intent(in)   :: fieldx(domain%x(1)%memory%begin:,domain%y(1)%memory%begin:,:)
-  MPP_TYPE_,            intent(in)   :: fieldy(domain%x(1)%memory%begin:,domain%y(1)%memory%begin:,:)
-  MPP_TYPE_, intent(inout), optional :: ebufferx(:,:), sbufferx(:,:), wbufferx(:,:), nbufferx(:,:)
-  MPP_TYPE_, intent(inout), optional :: ebuffery(:,:), sbuffery(:,:), wbuffery(:,:), nbuffery(:,:)
+  MPP_TYPE_, target, contiguous,            intent(in) :: fieldx(domain%x(1)%memory%begin:,domain%y(1)%memory%begin:,:)
+  MPP_TYPE_, target, contiguous,            intent(in) :: fieldy(domain%x(1)%memory%begin:,domain%y(1)%memory%begin:,:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebufferx(:,:), sbufferx(:,:), wbufferx(:,:), nbufferx(:,:)
+  MPP_TYPE_, target, contiguous, intent(inout), optional :: ebuffery(:,:), sbuffery(:,:), wbuffery(:,:), nbuffery(:,:)
   integer,      intent(in), optional :: flags, gridtype, tile_count
   logical,      intent(in), optional :: complete
 
@@ -540,10 +544,10 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   logical                 :: need_ebufferx, need_sbufferx, need_wbufferx, need_nbufferx
   logical                 :: need_ebuffery, need_sbuffery, need_wbuffery, need_nbuffery
 
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=-9999
-  integer(i8_kind),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=-9999
-  integer(i8_kind),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=-9999
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsx=c_null_ptr
+  type(c_ptr),dimension(MAX_DOMAIN_FIELDS, MAX_TILES),  save :: f_addrsy=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsx=c_null_ptr
+  type(c_ptr),dimension(4,MAX_DOMAIN_FIELDS, MAX_TILES),save :: b_addrsy=c_null_ptr
   integer, save    :: bsizex(4)=0, bsizey(4)=0, isize(2)=0, jsize(2)=0, ksize=0, l_size=0, list=0
   integer, save    :: offset_type, upflags
   integer          :: bufferx_size(4), buffery_size(4)
@@ -601,43 +605,43 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      write( text,'(i2)' ) MAX_DOMAIN_FIELDS
      call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
-  f_addrsx(list, tile) = LOC(fieldx)
-  f_addrsy(list, tile) = LOC(fieldy)
+  f_addrsx(list, tile) = c_loc(fieldx)
+  f_addrsy(list, tile) = c_loc(fieldy)
 
   if(present(ebufferx)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D_V: ebufferx should not be present when north is folded')
      if(.not. need_ebufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: ebufferx should not be present')
-     b_addrsx(1, list, tile) = LOC(ebufferx)
+     b_addrsx(1, list, tile) = c_loc(ebufferx)
      bufferx_size(1) = size(ebufferx,1)
   else
-     b_addrsx(1, list, tile) = 0
+     b_addrsx(1, list, tile) = c_null_ptr
      bufferx_size(1) = 1
   end if
   if(present(sbufferx)) then
      if(.not. need_sbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: sbufferx should not be present')
-     b_addrsx(2, list, tile) = LOC(sbufferx)
+     b_addrsx(2, list, tile) = c_loc(sbufferx)
      bufferx_size(2) = size(sbufferx,1)
   else
-     b_addrsx(2, list, tile) = 0
+     b_addrsx(2, list, tile) = c_null_ptr
      bufferx_size(2) = 1
   end if
   if(present(wbufferx)) then
      if(.not. need_wbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: wbufferx should not be present')
-     b_addrsx(3, list, tile) = LOC(wbufferx)
+     b_addrsx(3, list, tile) = c_loc(wbufferx)
      bufferx_size(3) = size(wbufferx,1)
   else
-     b_addrsx(3, list, tile) = 0
+     b_addrsx(3, list, tile) = c_null_ptr
      bufferx_size(3) = 1
   end if
   if(present(nbufferx)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D_V: nbufferx should not be present when north is folded')
      if(.not. need_nbufferx) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: nbufferx should not be present')
-     b_addrsx(4, list, tile) = LOC(nbufferx)
+     b_addrsx(4, list, tile) = c_loc(nbufferx)
      bufferx_size(4) = size(nbufferx,1)
   else
-     b_addrsx(4, list, tile) = 0
+     b_addrsx(4, list, tile) = c_null_ptr
      bufferx_size(4) = 1
   end if
 
@@ -645,36 +649,36 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D_V: ebuffery should not be present when north is folded')
      if(.not. need_ebuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: ebuffery should not be present')
-     b_addrsy(1, list, tile) = LOC(ebuffery)
+     b_addrsy(1, list, tile) = c_loc(ebuffery)
      buffery_size(1) = size(ebuffery,1)
   else
-     b_addrsy(1, list, tile) = 0
+     b_addrsy(1, list, tile) = c_null_ptr
      buffery_size(1) = 1
   end if
   if(present(sbuffery)) then
      if(.not. need_sbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: sbuffery should not be present')
-     b_addrsy(2, list, tile) = LOC(sbuffery)
+     b_addrsy(2, list, tile) = c_loc(sbuffery)
      buffery_size(2) = size(sbuffery,1)
   else
-     b_addrsy(2, list, tile) = 0
+     b_addrsy(2, list, tile) = c_null_ptr
      buffery_size(2) = 1
   end if
   if(present(wbuffery)) then
      if(.not. need_wbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: wbuffery should not be present')
-     b_addrsy(3, list, tile) = LOC(wbuffery)
+     b_addrsy(3, list, tile) = c_loc(wbuffery)
      buffery_size(3) = size(wbuffery,1)
   else
-     b_addrsy(3, list, tile) = 0
+     b_addrsy(3, list, tile) = c_null_ptr
      buffery_size(3) = 1
   end if
   if(present(nbuffery)) then
      if(BTEST(domain%fold,NORTH)) call mpp_error(FATAL, &
              'MPP_GET_BOUNDARY_3D_V: nbuffery should not be present when north is folded')
      if(.not. need_nbuffery) call mpp_error(FATAL,'MPP_GET_BOUNDARY_3D_V: nbuffery should not be present')
-     b_addrsy(4, list, tile) = LOC(nbuffery)
+     b_addrsy(4, list, tile) = c_loc(nbuffery)
      buffery_size(4) = size(nbuffery,1)
   else
-     b_addrsy(4, list, tile) = 0
+     b_addrsy(4, list, tile) = c_null_ptr
      buffery_size(4) = 1
   end if
 
@@ -738,8 +742,8 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
              b_addrsx(:,1:l_size,1:ntile), b_addrsy(:,1:l_size,1:ntile), bsizex, &
              bsizey, ksize, d_type, update_flags, grid_offset_type)
      endif
-     l_size=0; f_addrsx=-9999; f_addrsy=-9999; bsizex=0; bsizey=0;
-     b_addrsx=-9999; b_addrsy=-9999; isize=0;  jsize=0;  ksize=0
+     l_size=0; f_addrsx=c_null_ptr; f_addrsy=c_null_ptr; bsizex=0; bsizey=0;
+     b_addrsx=c_null_ptr; b_addrsy=c_null_ptr; isize=0;  jsize=0;  ksize=0
   end if
 
 end subroutine MPP_GET_BOUNDARY_AD_3D_V_

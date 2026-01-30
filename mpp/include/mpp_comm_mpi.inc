@@ -326,8 +326,6 @@ end subroutine mpp_exit
       integer, intent(in) :: from_pe !< pe to broadcast from
       integer, intent(in), optional :: pelist(:) !< optional pelist to broadcast to
       integer :: n, i, from_rank
-      character    :: str1D(length*size(char_data(:)))
-      pointer(lptr, str1D)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
       n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
@@ -352,7 +350,6 @@ end subroutine mpp_exit
              exit
          endif
       enddo
-      lptr = LOC (char_data)
       if( mpp_npes().GT.1 ) call MPI_BCAST( char_data, length*size(char_data(:)), &
          MPI_CHARACTER, from_rank, peset(n)%id, error )
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
